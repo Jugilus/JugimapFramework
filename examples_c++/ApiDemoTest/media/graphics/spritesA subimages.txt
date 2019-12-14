@@ -1,0 +1,24 @@
+Rolling stone 1:0:0:96:96
+Fella fr1:96:0:64:96
+Fella fr2:160:0:64:96
+Fella fr3:0:96:64:96
+Fella fr4:64:96:64:96
+Fella fr5:128:96:64:96
+Fella fr6:224:0:64:96
+Platform 1:0:192:96:32
+Blue diamond:224:96:64:64
+Crystal leaves 1:0:224:64:64
+Crystal leaves 2:64:224:64:64
+Flame fr1:128:224:64:64
+Flame fr2:192:224:64:64
+Flame fr3:288:0:64:64
+Flame fr4:288:64:64:64
+Green diamond:288:128:64:64
+Red diamond:288:192:64:64
+Shine1 fr4:0:288:52:52
+Blue star:52:288:32:32
+Cyan star:84:288:32:32
+Shine1 fr3:116:288:32:32
+Violet star:148:288:32:32
+Shine1 fr2:180:288:22:22
+Shine1 fr1:52:320:13:13

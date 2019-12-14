@@ -1,0 +1,277 @@
+#ifndef JUGIMAP_BINARY_LOADER_H
+#define JUGIMAP_BINARY_LOADER_H
+
+#include <string>
+#include <iostream>
+#include <fstream>
+
+#include "jmCommon.h"
+
+
+
+namespace jugimap{
+
+
+
+class SourceGraphics;
+class Map;
+class GraphicFile;
+class GraphicItem;
+class SourceSprite;
+class VectorShape;
+class FrameAnimation;
+class SpriteLayer;
+class VectorLayer;
+class ComposedSprite;
+class ObjectFactory;
+
+
+
+class BinaryStreamReader
+{
+public:
+
+    virtual ~BinaryStreamReader() {}
+
+    virtual bool IsOpen() = 0;
+    virtual int Pos() = 0;
+    virtual void Seek(int _pos) = 0;
+    virtual int Size() = 0;
+
+    virtual unsigned char ReadByte() = 0;
+    virtual int ReadInt() = 0;
+    virtual float ReadFloat() = 0;
+    virtual double ReadDouble() = 0;
+    virtual std::string ReadString(int length) = 0;
+    virtual std::string ReadStringWithWrittenLength()
+    {
+        int length = ReadInt();
+        return ReadString(length);
+     }
+
+};
+
+
+
+class StdBinaryStreamReader : public BinaryStreamReader
+{
+public:
+
+    StdBinaryStreamReader(const std::string &fileName);
+
+    bool IsOpen() override {return fs.is_open();}
+    int Pos() override {return fs.tellg();}
+    void Seek(int _pos) override {fs.seekg(_pos);}
+    //bool AtEnd(){return fs.eof();}
+    int Size() override {return size;}
+
+
+    unsigned char ReadByte()  override
+    {
+        unsigned char value;
+        fs.read(reinterpret_cast<char*>(&value), 1);
+        return value;
+    }
+
+    int ReadInt()  override
+    {
+        int value;
+        fs.read(reinterpret_cast<char*>(&value), 4);
+        return value;
+    }
+
+    float ReadFloat()  override
+    {
+        float value;
+        fs.read(reinterpret_cast<char*>(&value), 4);
+        return value;
+    }
+
+    double ReadDouble() override
+    {
+        double value;
+        fs.read(reinterpret_cast<char*>(&value), 8);
+        return value;
+    }
+
+    std::string ReadString(int length) override;
+
+
+private:
+    std::ifstream fs;
+    int size;
+};
+
+
+
+
+/// \ingroup Loaders
+/// \brief The JugiMapBinaryLoader class loads data from jugimap binary files (.jmb).
+class JugiMapBinaryLoader
+{
+public:
+    friend class ComposedSprite;
+
+
+    static std::string pathPrefix;                              ///<  An optional string attached to the *filePath* parameter in the loading functions. It must end with slash '/'!
+    static std::string error;                                   ///<  Error message if loading fails.
+    static std::vector<std::string> messages;                   ///<  Messages about skipped chunks of data during the loading.
+    static bool usePixelCoordinatesForTileLayerSprites; 		///<  Sprites on the editor's tile layers have positions stored in grid coordinates. If this parameter is *true*, the coordinates will be converted to pixel coordinates.
+
+    static int zOrderCounterStart;                              ///<  Starting z-order for loaded layers (for engines which manages drawing order of sprites via z-order parameter).
+    static int zOrderCounter;                                   ///<  Z-order counter for loaded layers.
+    static int zOrderCounterStep;                               ///<  Z-order counter step.
+
+
+    /// Loads source data from a jugimap binary file (.jmb) at the given **_filePath** into an empty **_SourceGraphics**. Returns *true* if loading succeeds, otherwise returns *false*.
+    static bool LoadSourceGraphics(std::string _filePath, SourceGraphics *_sourceGraphics);
+
+    /// Loads map data from a jugimap binary file (.jmb) at the given **_filePath** using the associated **_SourceGraphics**. Returns *true* if loading succeeds, otherwise returns *false*.
+    static bool LoadMap(std::string _filePath, jugimap::Map *_map, SourceGraphics *_sourceGraphics);
+
+
+private:
+    Map* map = nullptr;
+    SourceGraphics* sourceGraphics = nullptr;
+    ComposedSprite* loadedComposedSprite = nullptr;
+    int indexBeginSourceSprites = 0;
+    int indexBeginImageFiles = 0;
+
+
+    static void Reset();
+
+    bool _LoadSourceGraphics(BinaryStreamReader &stream, int size);
+    jugimap::GraphicFile *LoadGraphicFile(BinaryStreamReader &stream, int size);
+    jugimap::SourceSprite *LoadSourceSprite(BinaryStreamReader &stream, int size);
+    ComposedSprite *LoadComposedSpriteData(BinaryStreamReader &stream, int size);
+    bool _LoadMap(BinaryStreamReader &stream, int size);
+    jugimap::SpriteLayer *LoadLayer(BinaryStreamReader &stream, int size);
+    jugimap::VectorLayer *LoadVectorLayer(BinaryStreamReader &stream, int size);
+    jugimap::VectorShape *LoadVectorShape(BinaryStreamReader &stream, int size, bool vectorLayerShape=true);
+    jugimap::FrameAnimation *LoadFrameAnimation(BinaryStreamReader &stream, int size, jugimap::SourceSprite *ss);
+    bool LoadParameters(BinaryStreamReader &stream, std::vector<Parameter> &parameters);
+    void InitCollisionShapes(GraphicItem *gi);
+
+
+    struct SaveSignature
+    {
+        static const int FORMAT = 88880;
+        static const int FORMAT_VERSION = 1;
+
+        static const int EXPORTED_MAP_FORMAT = 99990;
+        static const int EXPORTED_MAP_FORMAT_VERSION = 2;
+
+        static const int EXPORTED_SOURCE_GRAPHICS_FORMAT = 100000;
+        static const int EXPORTED_SOURCE_GRAPHICS_FORMAT_VERSION = 2;
+
+        static const int HEADER = 100;
+        static const int MISC_DATA = 110;
+        static const int THUMBNAIL = 120;
+
+        static const int VARIABLES = 200;
+        static const int CHILD_ITEMS = 210;
+        static const int PARAMETERS = 220;
+        static const int CONSTANT_PARAMETERS = 230;
+
+        static const int SOURCE_SETS = 300;
+        static const int SOURCE_SET = 310;
+        static const int SOURCE_OBJECTS = 330;
+        static const int SOURCE_OBJECT = 340;
+
+        static const int SOURCE_IMAGE_FILES = 400;
+        static const int SOURCE_IMAGE_FILE = 410;
+        static const int SOURCE_IMAGES = 420;
+        static const int SOURCE_IMAGES_V2 = 421;
+
+        static const int MAP = 500;
+        static const int LAYERS = 510;
+        static const int LAYERS_GROUP = 520;
+        static const int LAYER = 530;
+        static const int VECTOR_LAYERS_GROUP = 540;
+        static const int VECTOR_LAYER = 550;
+        static const int STATIC_LAYER = 560;
+
+        static const int OBJECTS = 700;
+        static const int OBJECTS_V2 = 701;
+        static const int OBJECT = 710;
+        static const int VECTOR_SHAPES = 750;
+        static const int VECTOR_SHAPE = 760;
+        static const int VECTOR_SHAPE_CONTROL_POINTS = 770;
+
+        static const int COMPOSED_SPRITE = 800;
+
+        static const int ANIMATIONS = 900;
+        static const int FRAME_ANIMATIONS = 950;
+        static const int FRAME_ANIMATION = 960;
+        static const int ANIMATION_FRAMES = 970;
+
+    };
+
+    const int saveID_DUMMY_SIF = -10;
+    const int saveID_DUMMY_COMPOSED_SPRITE = -20;
+    //const int saveID_DUMMY_EMPTY_COMPOSED_SPRITE = -30;
+    static const int saveID_DUMMY_EMPTY_FRAME = -40;
+
+
+    // JMParameter kind
+    static const int jmINTEGER = 0;
+    static const int jmFLOAT = 1;
+    static const int jmBOOLEAN = 2;
+    static const int jmSTRING = 3;
+    static const int jmVALUES_SET = 4;
+
+    // layer kind
+    static const int jmTILE_LAYER = 0;
+    static const int jmSPRITE_LAYER = 1;
+    static const int jmVECTOR_LAYER = 2;
+    static const int jmSTATIC_SINGLE_SPRITE_LAYER = 3;
+
+    // file kind
+    static const int jmSINGLE_IMAGE = 0;
+    static const int jmTILE_SHEET_IMAGE = 1;
+    static const int jmSPRITE_SHEET_IMAGE = 2;
+    static const int jmSPINE_FILE = 3;
+    static const int jmSPRITER_FILE = 4;
+
+    // shape kind
+    static const int jmRECTANGLE = 1;
+    static const int jmPOLYLINE = 2;
+    static const int jmBEZIER_POLYCURVE = 3;
+    static const int jmELLIPSE = 4;
+    static const int jmSINGLE_POINT = 5;
+
+
+
+    //-------------------------------
+
+    struct FVectorVertex
+    {
+        int x=-1, y=-1;
+        float xBPprevious;       // used for bezier curves
+        float yBPprevious;
+        float xBPnext;
+        float yBPnext;
+    };
+
+    struct FVectorShape
+    {
+        int kind = -1;                                  // JMVectorShape::RECTANGLE, JMVectorShape::POLYLINE, JMVectorShape::BEZIER_POLYCURVE or JMVectorShape::ELLIPSE
+        bool closed = false;                            // closed polyline or bezier curve
+        int dataFlags = 0;                              // custom data integer
+        bool probe = false;                             // custom identifier
+        std::vector<FVectorVertex>vertices;
+        std::vector<Parameter> parameters;
+    };
+
+};
+
+
+
+
+}
+
+
+
+
+
+#endif
