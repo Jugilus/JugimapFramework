@@ -10,7 +10,8 @@
 #include "jmVectorShapesUtilities.h"
 #include "jmFrameAnimation.h"
 #include "jmObjectFactory.h"
-#include "jmBinaryLoader.h"
+#include "jmStreams.h"
+#include "jmMapBinaryLoader.h"
 
 
 using namespace std;
@@ -18,29 +19,6 @@ using namespace std;
 
 namespace jugimap{
 
-
-
-
-StdBinaryStreamReader::StdBinaryStreamReader(const std::string &fileName)
-{
-    fs.open(fileName, ios::binary);
-
-    if(fs.is_open()){
-        fs.seekg(0, ios::end);
-        size = fs.tellg();
-        fs.seekg(0, ios::beg);
-    }
-}
-
-
-std::string StdBinaryStreamReader::ReadString(int length)
-{
-    char *buf = new char[length];
-    fs.read(buf, length);
-    std::string value(buf, length);
-    delete[] buf;
-    return value;
-}
 
 
 //====================================================================================================
@@ -66,8 +44,25 @@ bool JugiMapBinaryLoader::LoadSourceGraphics(string _filePath, SourceGraphics *_
 
 
 
-    std::unique_ptr<BinaryStreamReader>stream(objectFactory->NewBinaryStreamReader(_filePath));
-    //StreamBinaryReader *Stream = objectFactory->NewBinaryStreamReader(_filePath);
+    std::unique_ptr<BinaryStreamReader>stream(objectFactory->NewBinaryFileStreamReader(_filePath));
+    /*
+    std::ifstream fs;
+    int length = 0;
+    fs.open(_filePath, ios::binary);
+
+    if(fs.is_open()==false){
+        return false;
+    }else{
+        fs.seekg(0, ios::end);
+        length = fs.tellg();
+        fs.seekg(0, ios::beg);
+    }
+    char *buff = new char[length];
+    fs.read(buff, length);
+    fs.close();
+    BinaryBufferReader *stream = new BinaryBufferReader((unsigned char*)buff, length);
+    */
+
     if(stream->IsOpen()==false){
         error = "Can not open file: " + _filePath;
         return false;
@@ -109,6 +104,7 @@ bool JugiMapBinaryLoader::LoadSourceGraphics(string _filePath, SourceGraphics *_
 
         if(signature==SaveSignature::SOURCE_SETS){
             if(loader._LoadSourceGraphics(*stream.get(), sizeChunk)==false){
+            //if(loader._LoadSourceGraphics(*stream, sizeChunk)==false){
                 if(error=="") error = "LoadSourceGraphics error!";
                 break;
             }
@@ -147,9 +143,8 @@ bool JugiMapBinaryLoader::LoadMap(std::string _filePath, Map* _map, SourceGraphi
     _filePath = pathPrefix + _filePath;
 
 
-    std::unique_ptr<BinaryStreamReader>stream(objectFactory->NewBinaryStreamReader(_filePath));
+    std::unique_ptr<BinaryStreamReader>stream(objectFactory->NewBinaryFileStreamReader(_filePath));
 
-    //StreamBinaryReader Stream(_filePath);
     if(stream->IsOpen()==false){
         error = "Can not open file: " + _filePath;
         return false;
@@ -176,6 +171,8 @@ bool JugiMapBinaryLoader::LoadMap(std::string _filePath, Map* _map, SourceGraphi
     //loader.indexBeginSourceSprites = _indexBeginSourceSprites;
     if(objectFactory==nullptr) objectFactory = &genericObjectFactory;
     loader.map = _map;
+    JugiMapBinaryLoader::zOrderCounterStart = _map->GetZOrderStart();
+    JugiMapBinaryLoader::zOrderCounter = JugiMapBinaryLoader::zOrderCounterStart;
 
     //----
     loader.map->name = _filePath;
@@ -198,6 +195,7 @@ bool JugiMapBinaryLoader::LoadMap(std::string _filePath, Map* _map, SourceGraphi
 
         if(signature==SaveSignature::MAP){
             if(loader._LoadMap(*stream.get(), sizeChunk)==false){
+            //if(loader._LoadMap(*stream, sizeChunk)==false){
                 if(error=="") error = "Load/LoadMap error!";
                 break;
             }
@@ -362,10 +360,10 @@ GraphicFile * JugiMapBinaryLoader::LoadGraphicFile(BinaryStreamReader &stream, i
             }
 
             //gf->kind = stream.ReadByte();
-            gf->relativeFilePath = stream.ReadStringWithWrittenLength();
+            gf->relativeFilePath = stream.ReadString();
             gf->size.x = stream.ReadInt();
             gf->size.y = stream.ReadInt();
-            gf->spineAtlasRelativeFilePath = stream.ReadStringWithWrittenLength();
+            gf->spineAtlasRelativeFilePath = stream.ReadString();
 
 
         }else if(signature==SaveSignature::SOURCE_IMAGES){
@@ -374,7 +372,7 @@ GraphicFile * JugiMapBinaryLoader::LoadGraphicFile(BinaryStreamReader &stream, i
             for(int i=0; i<nItems; i++){
                 GraphicItem *im = objectFactory->NewItem();
                 im->graphicFile = gf;
-                im->name = stream.ReadStringWithWrittenLength();
+                im->name = stream.ReadString();
                 im->rect.min.x = stream.ReadInt();
                 im->rect.min.y = stream.ReadInt();
                 im->rect.max.x = im->rect.min.x + stream.ReadInt();     // width
@@ -496,7 +494,7 @@ SourceSprite * JugiMapBinaryLoader::LoadSourceSprite(BinaryStreamReader &stream,
 
         if(signature==SaveSignature::VARIABLES){
 
-            ss->name = stream.ReadStringWithWrittenLength();
+            ss->name = stream.ReadString();
 
 
         }else if(signature==SaveSignature::SOURCE_IMAGES){
@@ -552,7 +550,7 @@ SourceSprite * JugiMapBinaryLoader::LoadSourceSprite(BinaryStreamReader &stream,
             for(int i=0; i<nParameters; i++){
                 Parameter pv;
                 pv.kind = stream.ReadByte();
-                pv.name = stream.ReadStringWithWrittenLength();
+                pv.name = stream.ReadString();
                 //----
                 ss->parametersTMP.push_back(pv);
             }
@@ -564,8 +562,8 @@ SourceSprite * JugiMapBinaryLoader::LoadSourceSprite(BinaryStreamReader &stream,
             for(int i=0; i<nConstantParameters; i++){
                 Parameter pv;
                 pv.kind = stream.ReadByte();
-                pv.name = stream.ReadStringWithWrittenLength();
-                pv.value = stream.ReadStringWithWrittenLength();
+                pv.name = stream.ReadString();
+                pv.value = stream.ReadString();
                 //----
                 ss->constantParameters.push_back(pv);
             }
@@ -854,7 +852,7 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
 
         if(signature==SaveSignature::VARIABLES){
 
-            layer->name = stream.ReadStringWithWrittenLength();
+            layer->name = stream.ReadString();
             int layerKind = stream.ReadByte();     // tile layer or sprite layer
             if(layerKind==jmTILE_LAYER){
                 //layer->kind = LayerKind::TILE;
@@ -1022,10 +1020,10 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
                         //empty
 
                     }else if(pv.kind==jmSTRING){
-                        pv.value = stream.ReadStringWithWrittenLength();
+                        pv.value = stream.ReadString();
 
                     }else if(pv.kind==jmVALUES_SET){
-                        pv.value = stream.ReadStringWithWrittenLength();
+                        pv.value = stream.ReadString();
                     }
 
                     if(pvActive){
@@ -1063,6 +1061,65 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
 
         }else if(signature==SaveSignature::PARAMETERS){
             LoadParameters(stream, layer->parameters);
+
+        }else if(signature==SaveSignature::PARALLAX_LAYER_PARAMETERS){
+
+            LoadParallaxAndScreenLayerParameters(stream, layer);
+
+            /*
+
+            layer->attachToLayer = stream.ReadString();
+
+            int layerType = stream.ReadInt();
+            if(layerType==typePARALLAX_LAYER){
+                layer->layerType = LayerType::PARALLAX;
+
+            }else if(layerType==typePARALLAX_STRETCHING_SINGLE_SPRITE){
+                layer->layerType = LayerType::PARALLAX_STRETCHING_SINGLE_SPRITE;
+
+            }else if(layerType==typeSCREEN_LAYER){
+                layer->layerType = LayerType::SCREEN;
+
+            }else if(layerType==typeSCREEN_STRETCHING_SINGLE_SPRITE){
+                layer->layerType = LayerType::SCREEN_STRETCHING_SINGLE_SPRITE;
+            }
+
+
+            layer->parallaxFactor.x = stream.ReadFloat();
+            layer->parallaxFactor.y = stream.ReadFloat();
+
+            layer->alignPosition.x = stream.ReadInt();
+            layer->alignPosition.y = stream.ReadInt();
+
+            layer->alignOffset.x = stream.ReadInt();
+            layer->alignOffset.y = stream.ReadInt();
+
+            layer->alignOffset_obtainFromMap.x = stream.ReadByte();
+            layer->alignOffset_obtainFromMap.y = stream.ReadByte();
+
+            layer->tilingCount.x = stream.ReadInt();
+            layer->tilingCount.y = stream.ReadInt();
+
+            layer->tilingCountAutoSpread.x = stream.ReadByte();
+            layer->tilingCountAutoSpread.y = stream.ReadByte();
+
+            layer->tilingSpacing.x = stream.ReadInt();
+            layer->tilingSpacing.y = stream.ReadInt();
+
+            layer->tilingSpacingDelta.x = stream.ReadInt();
+            layer->tilingSpacingDelta.y = stream.ReadInt();
+
+
+            int stretching = stream.ReadInt();
+            if(stretching==stretchXY_WORLD_SIZE){
+                layer->stretchingVariant = StretchingVariant::XY_TO_WORLD_SIZE;
+
+            }else if(stretching==stretchXY_VIEWPORT_SIZE){
+                layer->stretchingVariant = StretchingVariant::XY_TO_VIEWPORT_SIZE;
+            }
+
+            */
+
 
         }else{
             messages.push_back("LoadLayer - unknown signature:" + std::to_string(signature));
@@ -1119,7 +1176,7 @@ VectorLayer* JugiMapBinaryLoader::LoadVectorLayer(BinaryStreamReader &stream, in
 
         if(signature==SaveSignature::VARIABLES){
 
-            vl->name = stream.ReadStringWithWrittenLength();
+            vl->name = stream.ReadString();
 
         }else if(signature==SaveSignature::VECTOR_SHAPES){
 
@@ -1146,6 +1203,9 @@ VectorLayer* JugiMapBinaryLoader::LoadVectorLayer(BinaryStreamReader &stream, in
 
         }else if(signature==SaveSignature::PARAMETERS){
             LoadParameters(stream, vl->parameters);
+
+        }else if(signature==SaveSignature::PARALLAX_LAYER_PARAMETERS){
+            LoadParallaxAndScreenLayerParameters(stream, vl);
 
         }else{
             messages.push_back("LoadVectorLayer - unknown signature: " + std::to_string(signature));
@@ -1333,7 +1393,7 @@ FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stre
 
         if(signature==SaveSignature::VARIABLES){
 
-            fa->name = stream.ReadStringWithWrittenLength();
+            fa->name = stream.ReadString();
             fa->loopCount = stream.ReadInt();
             fa->loopForever = stream.ReadByte();
             fa->scaleDuration = stream.ReadFloat();
@@ -1419,8 +1479,8 @@ bool JugiMapBinaryLoader::LoadParameters(BinaryStreamReader &stream, std::vector
         bool pvActive = (bool)stream.ReadByte();
 
         pv.kind = stream.ReadByte();
-        pv.name = stream.ReadStringWithWrittenLength();
-        pv.value = stream.ReadStringWithWrittenLength();
+        pv.name = stream.ReadString();
+        pv.value = stream.ReadString();
 
         if(pvActive){
             parameters.push_back(pv);
@@ -1428,6 +1488,65 @@ bool JugiMapBinaryLoader::LoadParameters(BinaryStreamReader &stream, std::vector
     }
 
     return true;
+
+}
+
+
+void JugiMapBinaryLoader::LoadParallaxAndScreenLayerParameters(BinaryStreamReader &stream, Layer *layer)
+{
+
+    layer->attachToLayer = stream.ReadString();
+
+    int layerType = stream.ReadInt();
+    if(layerType==typePARALLAX_LAYER){
+        layer->layerType = LayerType::PARALLAX;
+
+    }else if(layerType==typePARALLAX_STRETCHING_SINGLE_SPRITE){
+        layer->layerType = LayerType::PARALLAX_STRETCHING_SINGLE_SPRITE;
+
+    }else if(layerType==typeSCREEN_LAYER){
+        layer->layerType = LayerType::SCREEN;
+
+    }else if(layerType==typeSCREEN_STRETCHING_SINGLE_SPRITE){
+        layer->layerType = LayerType::SCREEN_STRETCHING_SINGLE_SPRITE;
+    }
+
+
+    layer->parallaxFactor.x = stream.ReadFloat();
+    layer->parallaxFactor.y = stream.ReadFloat();
+
+    layer->alignPosition.x = stream.ReadInt();
+    layer->alignPosition.y = stream.ReadInt();
+
+    layer->alignOffset.x = stream.ReadInt();
+    layer->alignOffset.y = stream.ReadInt();
+    if(settings.IsYCoordinateUp()){
+        layer->alignOffset.y = - layer->alignOffset.y;      // offset is distance in pixels
+    }
+
+    layer->alignOffset_obtainFromMap.x = stream.ReadByte();
+    layer->alignOffset_obtainFromMap.y = stream.ReadByte();
+
+    layer->tilingCount.x = stream.ReadInt();
+    layer->tilingCount.y = stream.ReadInt();
+
+    layer->tilingCountAutoSpread.x = stream.ReadByte();
+    layer->tilingCountAutoSpread.y = stream.ReadByte();
+
+    layer->tilingSpacing.x = stream.ReadInt();
+    layer->tilingSpacing.y = stream.ReadInt();
+
+    layer->tilingSpacingDelta.x = stream.ReadInt();
+    layer->tilingSpacingDelta.y = stream.ReadInt();
+
+
+    int stretching = stream.ReadInt();
+    if(stretching==stretchXY_WORLD_SIZE){
+        layer->stretchingVariant = StretchingVariant::XY_TO_WORLD_SIZE;
+
+    }else if(stretching==stretchXY_VIEWPORT_SIZE){
+        layer->stretchingVariant = StretchingVariant::XY_TO_VIEWPORT_SIZE;
+    }
 
 }
 

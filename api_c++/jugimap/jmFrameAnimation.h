@@ -11,6 +11,7 @@ namespace jugimap{
 
 class GraphicItem;
 class SourceSprite;
+class Sprite;
 class StandardSprite;
 class JugiMapBinaryLoader;
 
@@ -138,15 +139,12 @@ private:
 // Wrapper class for animating JMStandardSprite with FrameAnimationPlayer
 
 ///\ingroup Animation
-/// \brief Frame animation player for standard sprites.
+/// \brief Frame animation player for sprites.
 ///
 /// This class wraps the generic *FrameAnimationPlayer*.
-class StandardSpriteFrameAnimationPlayer
+class SpriteFrameAnimationPlayer
 {
 public:
-
-    ///\brief Set a standard sprite which should be animated.
-    void SetSprite(StandardSprite  *_standardSprite){standardSprite = _standardSprite;}
 
 
     ///\brief Start playing the given *_frameAnimation* at frame *_indexFrame*.
@@ -157,7 +155,7 @@ public:
     void Play(FrameAnimation *_frameAnimation, int _indexFrame=0)
     {
         frameAnimationPlayer.Play(_frameAnimation, _indexFrame);
-        OnChangedStandardSpriteAnimationFrame();
+        OnChangedAnimationFrame();
     }
 
 
@@ -167,7 +165,7 @@ public:
     void Update()
     {
         if(frameAnimationPlayer.Update()==FrameAnimationPlayer::flagFRAME_CHANGED){
-            OnChangedStandardSpriteAnimationFrame();
+            OnChangedAnimationFrame();
         }
     }
 
@@ -196,12 +194,69 @@ public:
     void Reset(){frameAnimationPlayer.Reset();}
 
 
+protected:
+
+    virtual void OnChangedAnimationFrame() = 0;
+
+    FrameAnimationPlayer frameAnimationPlayer;
+};
+
+
+
+// Wrapper class for animating JMStandardSprite with FrameAnimationPlayer
+
+///\ingroup Animation
+/// \brief Frame animation player for standard sprites.
+///
+/// This class wraps the generic *FrameAnimationPlayer*.
+class StandardSpriteFrameAnimationPlayer : public SpriteFrameAnimationPlayer
+{
+public:
+
+    ///\brief Assign a standard sprite to be animated.
+    void SetSprite(Sprite  *_sprite){sprite = _sprite;}
+
+
+    ///\brief Returns the assigned sprite.
+    Sprite* GetSprite(){ return sprite; }
+
+
+protected:
+
+    virtual void OnChangedAnimationFrame() override;
+
 
 private:
-    StandardSprite  *standardSprite = nullptr;             // LINK pointer to animated sprite!
-    FrameAnimationPlayer frameAnimationPlayer;
+    Sprite  *sprite = nullptr;             // LINK pointer to animated sprite!
 
-    void OnChangedStandardSpriteAnimationFrame();
+
+};
+
+
+
+///\ingroup Animation
+/// \brief Frame animation player for animating more standard sprites with the same animation.
+///
+/// This class wraps the generic *FrameAnimationPlayer*.
+class SpritesFrameAnimationPlayer : public SpriteFrameAnimationPlayer
+{
+public:
+
+    ///\brief Assign sprites to be animated. All sprites must be standard sprites with the same SourceSprite!
+    void SetSprites(std::vector<Sprite*> _sprites) { sprites = _sprites; }
+
+
+    ///\brief Returns a reference to the vector of assigned sprites.
+    std::vector<Sprite*>& GetSprites(){ return sprites; }
+
+
+protected:
+
+    virtual void OnChangedAnimationFrame() override;
+
+
+private:
+    std::vector<Sprite*>sprites;             // LINK pointers to animated sprites - they should be sprites with the same source sprite!
 
 };
 

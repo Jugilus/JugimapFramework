@@ -72,7 +72,6 @@ bool PlatformerSceneCC::Init()
     sceneCCNode->addChild(eventsLayer);
     sceneCCNode->addChild(static_cast<jm::MapCC*>(backgroundMap)->GetMapNode());
     sceneCCNode->addChild(static_cast<jm::MapCC*>(worldMap)->GetMapNode());
-    if(testParallaxMap) sceneCCNode->addChild(static_cast<jm::MapCC*>(testParallaxMap)->GetMapNode());
     sceneCCNode->addChild(static_cast<jm::MapCC*>(guiMap)->GetMapNode());
     sceneCCNode->addChild(static_cast<jm::MapCC*>(infoMap)->GetMapNode());
 
@@ -248,11 +247,9 @@ void PlatformerSceneCC::AssignCamerasToMaps()
     if(doubleCamera){
         static_cast<jm::MapCC*>(backgroundMap)->SetCameras(std::vector<jm::Camera*>{&worldCameraA, &worldCameraB});
         static_cast<jm::MapCC*>(worldMap)->SetCameras(std::vector<jm::Camera*>{&worldCameraA, &worldCameraB});
-        if(testParallaxMap) static_cast<jm::MapCC*>(testParallaxMap)->SetCameras(std::vector<jm::Camera*>{&worldCameraA, &worldCameraB});
     }else{
         static_cast<jm::MapCC*>(backgroundMap)->SetCameras(std::vector<jm::Camera*>{&worldCamera});
         static_cast<jm::MapCC*>(worldMap)->SetCameras(std::vector<jm::Camera*>{&worldCamera});
-        if(testParallaxMap) static_cast<jm::MapCC*>(testParallaxMap)->SetCameras(std::vector<jm::Camera*>{&worldCamera});
     }
 }
 

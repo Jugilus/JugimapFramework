@@ -4,7 +4,7 @@
 #include "jmVectorShapes.h"
 #include "jmUtilities.h"
 #include "jmFrameAnimation.h"
-#include "jmBinaryLoader.h"
+#include "jmMapBinaryLoader.h"
 #include "jmCollision.h"
 #include "jmMap.h"
 #include "jmLayers.h"
@@ -699,14 +699,14 @@ void ComposedSprite::UpdateTransform()
 
     if(changeFlags == Property::POSITION){    // changed only position
 
-        cTransform = MakeTransformationMatrix(position, scale, flip, rotation, handle);
+        cTransform = MakeTransformationMatrix(position+GetLayer()->GetParallaxOffset(), scale, flip, rotation, handle);
         if(parentComposedSprite){
             cTransform = parentComposedSprite->cTransform * cTransform;
         }
         return;
     }
 
-    cTransform = MakeTransformationMatrix(position, scale, flip, rotation, handle);
+    cTransform = MakeTransformationMatrix(position+GetLayer()->GetParallaxOffset(), scale, flip, rotation, handle);
     cFlip = flip;
     cScale = scale.x;      // composed sprites have uniform scale !
     cRotation = rotation;

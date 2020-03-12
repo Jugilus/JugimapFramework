@@ -65,27 +65,50 @@ enum class WorldLayerMode
 };
 
 
+
+/// The layer types.
+enum class LayerType
+{
+    WORLD,
+    PARALLAX,
+    PARALLAX_STRETCHING_SINGLE_SPRITE,
+    SCREEN,
+    SCREEN_STRETCHING_SINGLE_SPRITE
+};
+
+
+
+/// The stretching variants.
+enum class StretchingVariant
+{
+    XY_TO_WORLD_SIZE,
+    XY_TO_VIEWPORT_SIZE
+};
+
+
+/*
 /// The parallax layer modes.
 enum class ParallaxLayerMode
 {
-    NO_CHANGE,                          ///< %Layer unchanged from the editor.
-    TILING_X,                           ///< %Layer tiled in x direction.
-    TILING_Y,                           ///< %Layer tiled in y direction.
-    TILING_XY,                          ///< %Layer tiled in x and y directions.
-    SINGLE_SPRITE_STRETCH_X,            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in x direction.
-    SINGLE_SPRITE_STRETCH_Y,            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in y direction.
-    SINGLE_SPRITE_STRETCH_XY            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in x and y directions.
-};
+    STANDARD,
+    STRETCHING_SINGLE_SPRITE
 
+};
+*/
 
 /// The screen layer modes.
-enum class ScreenLayerMode
-{
+//enum class ScreenLayerMode
+//{
+//    STANDARD,
+//    STRETCHING_SINGLE_SPRITE
+
+    /*
     NO_CHANGE,                          ///< %Layer unchanged from the editor.
     SINGLE_SPRITE_STRETCH_X,            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in x direction.
     SINGLE_SPRITE_STRETCH_Y,            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in y direction.
     SINGLE_SPRITE_STRETCH_XY            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in x and y directions.
-};
+    */
+//};
 
 
 /// The align factors for the X direction.

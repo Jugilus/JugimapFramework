@@ -53,6 +53,8 @@ public:
     float GetStartValue(){ return valueStart;}
     float GetEndValue(){ return valueEnd;}
 
+    float Update();
+
 private:
     float value = 0;
     float valueStart = 0.0;
@@ -75,7 +77,7 @@ private:
     int stateStored = 0;
     int msTimeStored = 0;
 
-    void Update();
+
 };
 
 

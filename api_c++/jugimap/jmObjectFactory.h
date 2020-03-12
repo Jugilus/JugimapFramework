@@ -42,7 +42,7 @@ class ObjectFactory
 {
 public:
 
-    virtual BinaryStreamReader* NewBinaryStreamReader(const std::string &fileName);
+    virtual BinaryStreamReader* NewBinaryFileStreamReader(const std::string &fileName);
 
     /// Returns a new graphic file object.
     virtual GraphicFile* NewFile();

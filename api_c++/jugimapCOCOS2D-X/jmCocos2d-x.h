@@ -15,6 +15,26 @@
 namespace jugimap {
 
 
+
+
+/// \ingroup EngineExtension_Cocos2d-x
+/// \brief Extended BinaryStreamReader class for Cocos2d-x.
+class BinaryFileStreamReaderCC : public BinaryBufferStreamReader
+{
+public:
+
+    ///\brief Constructor
+    ///
+    /// Creates a new BinaryFileStreamReaderCC object and open the file *fileName* for reading.
+    /// This reader utilizes Cocos2d-x's reader and the file path must follow the requirements of that reader.
+    BinaryFileStreamReaderCC(const std::string &fileName);
+
+};
+
+
+//===================================================================================================
+
+
 /// \ingroup EngineExtension_Cocos2d-x
 /// \brief Extended GraphicFile class for Cocos2d-x.
 class GraphicFileCC : public GraphicFile
@@ -284,6 +304,7 @@ class ObjectFactoryCC : public ObjectFactory
 {
 public:
 
+    virtual BinaryStreamReader* NewBinaryFileStreamReader(const std::string &filePath) override { return new BinaryFileStreamReaderCC(filePath);}
     virtual GraphicFile* NewFile() override { return new GraphicFileCC(); }
     virtual Map* NewMap() override { return new MapCC(); }
     virtual SpriteLayer *NewSpriteLayer() override { return new SpriteLayerCC(); }

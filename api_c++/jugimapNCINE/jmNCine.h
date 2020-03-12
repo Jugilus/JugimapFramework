@@ -30,17 +30,17 @@ namespace jugimap {
 #if defined(__ANDROID__)
 
 
-class AndroidBinaryStreamReaderNC : public BinaryStreamReader
+class AndroidBinaryFileStreamReaderNC : public BinaryStreamReader
 {
 public:
 
-    AndroidBinaryStreamReaderNC(const std::string &fileName)
+    AndroidBinaryFileStreamReaderNC(const std::string &fileName)
     {
         ncIFile = new ncine::AssetFile(fileName.c_str());
         ncIFile->open(ncine::IFile::OpenMode::READ | ncine::IFile::OpenMode::BINARY);
     }
 
-    ~AndroidBinaryStreamReaderNC(){ if(ncIFile) delete ncIFile; }
+    ~AndroidBinaryFileStreamReaderNC(){ if(ncIFile) delete ncIFile; }
 
 
     bool IsOpen() override {return ncIFile->isOpened();}
@@ -70,15 +70,10 @@ public:
         return value;
     }
 
-    double ReadDouble() override
-    {
-        double value;
-        ncIFile->read(reinterpret_cast<char*>(&value), 8);
-        return value;
-    }
 
-    std::string ReadString(int length) override
+    std::string ReadString() override
     {
+        int length = ReadInt();
         char *buf = new char[length];
         ncIFile->read(buf, length);
         std::string value(buf, length);
@@ -264,9 +259,9 @@ class ObjectFactoryNC : public ObjectFactory
 public:
 
 #if defined(__ANDROID__)
-    virtual BinaryStreamReader* NewBinaryStreamReader(const std::string &fileName) override
+    virtual BinaryStreamReader* NewBinaryFileStreamReader(const std::string &fileName) override
     {
-        return new AndroidBinaryStreamReaderNC(fileName);
+        return new AndroidBinaryFileStreamReaderNC(fileName);
     }
 #endif
 

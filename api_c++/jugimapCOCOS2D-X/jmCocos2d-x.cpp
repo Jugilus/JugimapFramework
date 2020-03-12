@@ -14,6 +14,36 @@ namespace jugimap {
 
 
 
+
+BinaryFileStreamReaderCC::BinaryFileStreamReaderCC(const std::string &fileName) : BinaryBufferStreamReader(nullptr, 0, true)
+{
+
+    cocos2d::Data data = cocos2d::FileUtils::getInstance()->getDataFromFile(fileName);
+
+    // The commented code bellow causes crash when destructor deletes the buffer. No idea why.
+    //ssize_t len = 0;
+    //buff = data.takeBuffer(&len);
+    //length = len;
+
+
+    unsigned char* b = data.getBytes();
+
+    size = data.getSize();
+
+    if(size>0){
+        buff = new unsigned char[size];
+        memcpy(buff, b, size);
+    }
+
+    ownedBuffer = true;
+
+}
+
+
+//===================================================================================================
+
+
+
 int GraphicFileCC::textureSmoothFilter = true;
 
 

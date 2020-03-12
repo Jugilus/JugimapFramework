@@ -20,6 +20,7 @@ void Layer::InitLayerParameters()
 
     for(Parameter &PV : parameters){
 
+        /*
         if(PV.name=="alignX"){
 
             if(PV.value=="MIDDLE"){
@@ -110,6 +111,7 @@ void Layer::InitLayerParameters()
             linkedLayerName = PV.value;
 
         }
+        */
     }
 
 }
@@ -151,6 +153,7 @@ bool Layer::UpdateParallaxOffset()
     //----
     Vec2f parallaxOffsetCurrent;
 
+    /*
     if(alignX==AlignX::LEFT){
         parallaxOffsetCurrent.x = xAlignLEFT;
 
@@ -170,6 +173,17 @@ bool Layer::UpdateParallaxOffset()
     }else if(alignY==AlignY::TOP){
         parallaxOffsetCurrent.y = yAlignTOP;
     }
+    */
+
+    // alignPosition.x = 0  ->  LEFT
+    // alignPosition.x = 100  ->  RIGHT
+    // alignPosition.y = 0  ->  TOP
+    // alignPosition.y = 100  ->  BOTTOM
+
+
+    parallaxOffsetCurrent.x = xAlignLEFT * (1.0 - alignPosition.x/100.0) +  xAlignRIGHT * (alignPosition.x/100.0);
+    parallaxOffsetCurrent.y = yAlignTOP * (1.0 - alignPosition.y/100.0) +  yAlignBOTTOM * (alignPosition.y/100.0);
+
 
     parallaxOffsetCurrent = parallaxOffsetCurrent + alignOffset;
 
@@ -253,6 +267,7 @@ void SpriteLayer::UpdateEngineLayer()
 
         if(GetMap()->GetType()==MapType::PARALLAX){
 
+            /*
             if(GetParallaxLayerMode()==ParallaxLayerMode::SINGLE_SPRITE_STRETCH_XY){
                 UpdateSingleSpriteStretch(GetMap()->GetWorldMapSize(), true, true);
 
@@ -271,9 +286,26 @@ void SpriteLayer::UpdateEngineLayer()
                     AppendToSpritesChangeFlag(Sprite::Property::POSITION);
                 };
             }
+            */
+
+
+            //if(GetParallaxLayerMode()==ParallaxLayerMode::STANDARD){
+            if(GetLayerType()==LayerType::PARALLAX){
+                if(UpdateParallaxOffset()){
+                    AppendToSpritesChangeFlag(Sprite::Property::POSITION);
+                };
+
+            //}else if(GetParallaxLayerMode()==ParallaxLayerMode::STRETCHING_SINGLE_SPRITE){
+            }else if(GetLayerType()==LayerType::PARALLAX_STRETCHING_SINGLE_SPRITE){
+                if(UpdateStretchingSingleSpriteLayer()){
+                    AppendToSpritesChangeFlag(Sprite::Property::TRANSFORMATION);
+                }
+            }
+
 
         }else if(GetMap()->GetType()==MapType::SCREEN){
 
+            /*
             if(GetScreenLayerMode()==ScreenLayerMode::SINGLE_SPRITE_STRETCH_XY){
                 UpdateSingleSpriteStretch(GetMap()->GetScreenMapDesignSize(), true, true);
 
@@ -283,6 +315,13 @@ void SpriteLayer::UpdateEngineLayer()
             }else if(GetScreenLayerMode()==ScreenLayerMode::SINGLE_SPRITE_STRETCH_Y){
                 UpdateSingleSpriteStretch(GetMap()->GetScreenMapDesignSize(), false, true);
 
+            }
+            */
+            //if(GetScreenLayerMode()==ScreenLayerMode::STRETCHING_SINGLE_SPRITE){
+            if(GetLayerType()==LayerType::SCREEN_STRETCHING_SINGLE_SPRITE){
+                if(UpdateStretchingSingleSpriteLayer()){
+                    AppendToSpritesChangeFlag(Sprite::Property::TRANSFORMATION);
+                }
             }
         }
     }
@@ -312,7 +351,7 @@ void SpriteLayer::DrawEngineLayer()
 
 void SpriteLayer::UpdateSingleSpriteStretch(Vec2i _designSize, bool _stretchX, bool _stretchY)
 {
-
+/*
     if(GetSprites().empty()) return;
     StandardSprite  *s = dynamic_cast<StandardSprite *>(GetSprites().front());
     if(s==nullptr || s->GetActiveImage()==nullptr) return;
@@ -380,6 +419,112 @@ void SpriteLayer::UpdateSingleSpriteStretch(Vec2i _designSize, bool _stretchX, b
         s->AppendToChangeFlags(Sprite::Property::TRANSFORMATION);
         s->CaptureForLerpDrawing();            // needed only for engines using 'lerp' tweening for drawing sprites
     }
+
+*/
+}
+
+
+
+bool SpriteLayer::UpdateStretchingSingleSpriteLayer()
+{
+
+    if(GetSprites().empty()) return false;
+    StandardSprite  *s = dynamic_cast<StandardSprite *>(GetSprites().front());
+    if(s==nullptr || s->GetActiveImage()==nullptr) return false;
+
+
+    Vec2f spriteSize = Vec2iToVec2f(s->GetActiveImage()->GetSize());
+    Vec2f spriteHandle(spriteSize.x/2.0, spriteSize.y/2.0);
+    Vec2f spritePosition;
+
+    //---
+    Vec2f rectSize;
+
+    if(GetMap()->GetType()==MapType::PARALLAX){
+
+        WorldMapCamera *camera = dynamic_cast<WorldMapCamera*>(GetMap()->GetCamera());
+        assert(camera);
+
+        if(GetStretchingVariant()==StretchingVariant::XY_TO_WORLD_SIZE){
+            rectSize = Vec2f(camera->GetWorldSize().x, camera->GetWorldSize().y);
+            spritePosition = rectSize/2.0;
+
+        }else if(GetStretchingVariant()==StretchingVariant::XY_TO_VIEWPORT_SIZE){
+            rectSize = camera->GetViewport().Size();
+            spritePosition = camera->GetPointedPosition();
+        }
+
+    }else if(GetMap()->GetType()==MapType::SCREEN){
+        rectSize = Vec2f(GetMap()->GetScreenMapDesignSize().x, GetMap()->GetScreenMapDesignSize().y);
+        spritePosition = rectSize/2.0;
+    }
+
+    Vec2f spriteScale = rectSize / spriteSize;
+
+
+
+    //alignY = AlignY::MIDDLE;
+    //alignOffset = Vec2f(20,20);
+
+    //_stretchX = true;
+    //_stretchY = false;
+    //alignX = AlignX::LEFT;
+
+
+    /*
+    if(_stretchX && _stretchY){
+        spriteScale.x = _designSize.x/spriteSize.x;
+        spriteScale.y = _designSize.y/spriteSize.y;
+
+
+    }else if(_stretchX){
+        spriteScale.x = _designSize.x/spriteSize.x;
+
+        if(GetAlignY()==AlignY::BOTTOM){
+            if(settings.IsYCoordinateUp()){
+                spritePosition.y = spriteHandle.y;
+            }else{
+                spritePosition.y = _designSize.y - spriteHandle.y;
+            }
+
+        }else if(GetAlignY()==AlignY::MIDDLE){
+
+
+        }else if(GetAlignY()==AlignY::TOP){
+            if(settings.IsYCoordinateUp()){
+                spritePosition.y = _designSize.y - spriteHandle.y;
+            }else{
+                spritePosition.y = spriteHandle.y;
+            }
+        }
+
+    }else if(_stretchY){
+        spriteScale.y = _designSize.y/spriteSize.y;
+
+        if(GetAlignX()==AlignX::LEFT){
+            spritePosition.x = spriteHandle.x;
+
+        }else if(GetAlignX()==AlignX::MIDDLE){
+
+        }else if(GetAlignX()==AlignX::RIGHT){
+            spritePosition.x = _designSize.x - spriteHandle.x;
+        }
+    }
+    */
+
+    //spritePosition = spritePosition + GetAlignOffset();
+
+
+    if(spriteHandle.Equals(s->GetHandle())==false || spritePosition.Equals(s->GetPosition())==false || spriteScale.Equals(s->GetScale())==false){
+        s->SetHandle(spriteHandle);
+        s->SetPosition(spritePosition);
+        s->SetScale(spriteScale);
+        s->CaptureForLerpDrawing();            // needed only for engines using 'lerp' tweening for drawing sprites
+
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -488,11 +633,14 @@ void VectorLayer::UpdateEngineLayer()
     if(GetMap()){
         if(GetMap()->GetType()==MapType::PARALLAX){
 
-            if(GetParallaxLayerMode()==ParallaxLayerMode::NO_CHANGE ||
-                     GetParallaxLayerMode()==ParallaxLayerMode::TILING_X ||
-                     GetParallaxLayerMode()==ParallaxLayerMode::TILING_Y ||
-                     GetParallaxLayerMode()==ParallaxLayerMode::TILING_XY )
-            {
+            //if(GetParallaxLayerMode()==ParallaxLayerMode::NO_CHANGE ||
+            //         GetParallaxLayerMode()==ParallaxLayerMode::TILING_X ||
+            //         GetParallaxLayerMode()==ParallaxLayerMode::TILING_Y ||
+            //         GetParallaxLayerMode()==ParallaxLayerMode::TILING_XY )
+            //{
+
+            //if(GetParallaxLayerMode()==ParallaxLayerMode::STANDARD){
+            if(GetLayerType()==LayerType::PARALLAX){
                 UpdateParallaxOffset();
             }
         }
@@ -501,6 +649,38 @@ void VectorLayer::UpdateEngineLayer()
 
 
 
+void VectorLayer::UpdateBoundingBox()
+{
+
+    boundingBox = Rectf(999999.0, 999999.0, -999999.0, -999999.0);               // initial box
+
+    for(VectorShape* vs : vectorShapes){
+
+        if(vs->GetKind()==ShapeKind::POLYLINE){
+            PolyLineShape *poly = static_cast<PolyLineShape*>(vs->GetGeometricShape());
+            for(Vec2f &v : poly->vertices){
+                boundingBox = boundingBox.Expand(v);
+            }
+
+        }else if(vs->GetKind()==ShapeKind::BEZIER_POLYCURVE){
+            BezierShape *bezierPath = static_cast<BezierShape*>(vs->GetGeometricShape());
+            for(BezierVertex &bv : bezierPath->vertices){
+                boundingBox = boundingBox.Expand(bv.P);
+            }
+
+        }else if(vs->GetKind()==ShapeKind::ELLIPSE){
+            EllipseShape *ellipse = static_cast<EllipseShape*>(vs->GetGeometricShape());
+            boundingBox = boundingBox.Expand(Vec2f(ellipse->center.x-ellipse->a, ellipse->center.y-ellipse->b));
+            boundingBox = boundingBox.Expand(Vec2f(ellipse->center.x+ellipse->a, ellipse->center.y+ellipse->b));
+
+        }else if(vs->GetKind()==ShapeKind::SINGLE_POINT){
+            SinglePointShape *sps = static_cast<SinglePointShape*>(vs->GetGeometricShape());
+            boundingBox = boundingBox.Expand(sps->point);
+        }
+    }
+
+
+}
 
 
 

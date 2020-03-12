@@ -40,7 +40,6 @@ protected:
     jugimap::Map *backgroundMap = nullptr;                              // OWNED
     jugimap::SourceGraphics *guiSourceGraphics = nullptr;               // OWNED
     jugimap::Map *guiMap = nullptr;                                     // OWNED
-    jugimap::Map *testParallaxMap = nullptr;                            // OWNED
     jugimap::Map *infoMap = nullptr;                                    // OWNED
     ShapesDrawingLayer *worldMapDrawingLayer = nullptr;                 // LINK
     ShapesDrawingLayer *testParallaxMapDrawingLayer = nullptr;          // LINK

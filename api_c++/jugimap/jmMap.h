@@ -170,7 +170,10 @@ protected:
 
     virtual void InitMapParameters();
     void SetLayersPlanes();
+    //void TileLayers();
     void UpdateBoundingBox();
+    //void SetAlignOffsetsFromMap();
+    void Normalize();
 
 
 

@@ -2,7 +2,7 @@
 #define JUGIMAP_API_H
 
 
-#include "jmBinaryLoader.h"
+#include "jmMapBinaryLoader.h"
 #include "jmCommon.h"
 #include "jmCommonFunctions.h"
 #include "jmSourceGraphics.h"
@@ -22,6 +22,7 @@
 #include "jmCamera.h"
 #include "jmGlobal.h"
 #include "jmUtilities.h"
+#include "jmStreams.h"
 
 
 namespace jugimap
@@ -37,7 +38,7 @@ namespace jugimap
 
 // DoxyGen
 
-/// \defgroup Loaders
+/// \defgroup MapLoaders
 
 /// \defgroup MapElements
 
@@ -52,6 +53,8 @@ namespace jugimap
 /// \defgroup Common
 
 /// \defgroup CommonFunctions
+
+/// \defgroup Streams
 
 /// \defgroup EngineExtension_Cocos2d-x
 ///

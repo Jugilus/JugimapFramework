@@ -217,25 +217,56 @@ int FrameAnimationPlayer::GetRepeatTime(int _msCurrentTime)
 //==============================================================================================
 
 
-void StandardSpriteFrameAnimationPlayer::OnChangedStandardSpriteAnimationFrame()
+void StandardSpriteFrameAnimationPlayer::OnChangedAnimationFrame()
 {
 
     AnimationFrame *frame =  frameAnimationPlayer.GetActiveFrame();
 
-    if(frame->image){
-        if(frame->flip != standardSprite->GetFlip()){
-            standardSprite->SetFlip(frame->flip);
+    if(sprite->GetKind()==SpriteKind::STANDARD){
+        StandardSprite* ss = static_cast<StandardSprite*>(sprite);
+
+        if(frame->image){
+            if(frame->flip != ss->GetFlip()){
+                ss->SetFlip(frame->flip);
+            }
+            if(frame->offset.Equals(ss->GetAnimationFrameOffset())==false){
+                ss->SetAnimationFrameOffset(frame->offset);
+            }
         }
-        if(frame->offset.Equals(standardSprite->GetAnimationFrameOffset())==false){
-            standardSprite->SetAnimationFrameOffset(frame->offset);
-        }
+        ss->SetActiveImage(frame->image);
+
     }
 
-    standardSprite->SetActiveImage(frame->image);
 }
 
 
 
+//==============================================================================================
+
+
+
+void SpritesFrameAnimationPlayer::OnChangedAnimationFrame()
+{
+
+    AnimationFrame *frame =  frameAnimationPlayer.GetActiveFrame();
+
+
+    for(Sprite *s : sprites){
+        if(s->GetKind()==SpriteKind::STANDARD){
+            StandardSprite* ss = static_cast<StandardSprite*>(s);
+
+            if(frame->image){
+                if(frame->flip != ss->GetFlip()){
+                    ss->SetFlip(frame->flip);
+                }
+                if(frame->offset.Equals(ss->GetAnimationFrameOffset())==false){
+                    ss->SetAnimationFrameOffset(frame->offset);
+                }
+            }
+            ss->SetActiveImage(frame->image);
+        }
+    }
+}
 
 
 

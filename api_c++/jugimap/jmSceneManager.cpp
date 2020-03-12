@@ -34,7 +34,7 @@ void SceneManager::SetCurrentScene(Scene *_scene)
     }
 
     //--- Start scene
-    if(currentScene && currentScene->IsActive()==false){
+    if(currentScene && currentScene->IsInitialized() && currentScene->IsActive()==false){
 
         // reset time variables !
         passedTimeMS = passedTimeMSPrevious = time.UpdatePassedTimeMS();

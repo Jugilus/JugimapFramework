@@ -20,7 +20,6 @@ PlatformerScene::~PlatformerScene()
     if(backgroundMap) delete backgroundMap;
     if(worldMap) delete worldMap;
     if(guiMap) delete guiMap;
-    if(testParallaxMap) delete testParallaxMap;
     if(infoMap) delete infoMap;
 
     if(worldSourceGraphics) delete worldSourceGraphics;
@@ -44,12 +43,11 @@ bool PlatformerScene::Init()
     //------------------------------------------------------------------------------
     //std::string worldMapFile = "media/maps/worldmap_test.jmb";        // map with some composed sprite dummies for testing
     std::string worldMapFile = "media/maps/worldmap.jmb";
-    std::string worldMapSourceGraphicsFile = "media/maps/cfgWorldmap.sgb";
+    std::string worldMapSourceGraphicsFile = "media/maps/cfgPlatformerWorld.sgb";
     std::string backgroundMapFile = "media/maps/background.jmb";
-    std::string backgroundSourceGraphicsFile = "media/maps/cfgBackground.sgb";
+    std::string backgroundSourceGraphicsFile = "media/maps/cfgPlatformerBackground.sgb";
     std::string guiMapFile = "media/maps/gui.jmb";
-    std::string guiMapSourceGraphicsFile = "media/maps/cfgGui.sgb";
-    std::string parallaxTestMapFile = "media/maps/parallaxTest.jmb";    // map for testing paallax features
+    std::string guiMapSourceGraphicsFile = "media/maps/cfgPlatformerGui.sgb";
 
 
     //---- world map
@@ -60,7 +58,6 @@ bool PlatformerScene::Init()
 
     worldMap = objectFactory->NewMap();
     worldMap->_SetZOrderStart(zOrderWorldMap);
-    JugiMapBinaryLoader::zOrderCounterStart = zOrderWorldMap;
     if(JugiMapBinaryLoader::LoadMap(worldMapFile, worldMap, worldSourceGraphics)==false){
         return false;
     }
@@ -73,7 +70,6 @@ bool PlatformerScene::Init()
 
     backgroundMap = objectFactory->NewMap();
     backgroundMap->_SetZOrderStart(zOrderBackgroundMap);
-    JugiMapBinaryLoader::zOrderCounterStart = zOrderBackgroundMap;
     if(JugiMapBinaryLoader::LoadMap(backgroundMapFile, backgroundMap, backgroundSourceGraphics)==false){
         return false;
     }
@@ -86,19 +82,9 @@ bool PlatformerScene::Init()
 
     guiMap = objectFactory->NewMap();
     guiMap->_SetZOrderStart(zOrderGuiMap);
-    JugiMapBinaryLoader::zOrderCounterStart = zOrderGuiMap;
     if(JugiMapBinaryLoader::LoadMap(guiMapFile, guiMap, guiSourceGraphics)==false){
         return false;
     }
-
-    //---- test parallax (just some dummie layers)
-    // Source graphics used are the same as guiSourceGraphics so we use that (if loaded again we would duplicate data)!
-    //testParallaxMap = objectFactory->NewMap();
-    //testParallaxMap->_SetZOrderStart(zOrderTestParallaxMap);
-    //JugiMapBinaryLoader::zOrderCounterStart = zOrderTestParallaxMap;
-    //if(JugiMapBinaryLoader::LoadMap(parallaxTestMapFile, testParallaxMap, guiSourceGraphics)==false){
-    //    return false;
-    //}
 
 
     //------------------------------------------------------------------------------
@@ -109,7 +95,6 @@ bool PlatformerScene::Init()
     // First initialize world map as its size is needed for parallax maps!
     worldMap->InitWorldMap();
     backgroundMap->InitParallaxMap(worldMap->GetWorldMapSize());
-    if(testParallaxMap) testParallaxMap->InitParallaxMap(worldMap->GetWorldMapSize());
 
 
     // 'guiMap' is a screen map and its elements will be aligned within 'guiMapDesignSize'
@@ -121,7 +106,6 @@ bool PlatformerScene::Init()
     // Initialize engine maps - creates engine objects (textures, sprites...) and get ready everything for action
     backgroundMap->InitEngineMap();
     worldMap->InitEngineMap();
-    if(testParallaxMap) testParallaxMap->InitEngineMap();
     guiMap->InitEngineMap();
 
 
@@ -134,13 +118,6 @@ bool PlatformerScene::Init()
     worldMapDrawingLayer->_SetZOrder(worldMap->GetNextZOrder(JugiMapBinaryLoader::zOrderCounterStep));    // Call this before adding the layer to the map !
     worldMap->_AddLayer(worldMapDrawingLayer);
     worldMapDrawingLayer->InitEngineLayer();
-
-    if(testParallaxMap){
-        testParallaxMapDrawingLayer = new ShapesDrawingLayer("testParallaxMapDrawingLayer", testParallaxMap);
-        testParallaxMapDrawingLayer->_SetZOrder(testParallaxMap->GetNextZOrder(JugiMapBinaryLoader::zOrderCounterStep));    // Call this before adding the layer !
-        testParallaxMap->_AddLayer(testParallaxMapDrawingLayer);
-        testParallaxMapDrawingLayer->InitEngineLayer();
-    }
 
     guiMapDrawingLayer = new ShapesDrawingLayer("guiMapDrawingLayer", guiMap);
     guiMapDrawingLayer->_SetZOrder(guiMap->GetNextZOrder(JugiMapBinaryLoader::zOrderCounterStep));    // Call this before adding the layer to the map !
@@ -173,9 +150,8 @@ bool PlatformerScene::Init()
     SpriteLayer *infoLayer = objectFactory->NewSpriteLayer();
     infoLayer->_SetName("infoLayer");
     infoLayer->_SetKind(LayerKind::SPRITE);
-    infoLayer->_SetScreenLayerMode(ScreenLayerMode::NO_CHANGE);
-    infoLayer->_SetAlignX(AlignX::MIDDLE);
-    infoLayer->_SetAlignY(AlignY::MIDDLE);
+    infoLayer->_SetLayerType(LayerType::SCREEN);
+    infoLayer->_SetAlignPosition(Vec2i(50,50));     // middle, middle
     infoLayer->_SetZOrder(zOrderInfoMap);
     JugiMapBinaryLoader::zOrderCounterStart = zOrderWorldMap;
     infoMap->_AddLayer(infoLayer);
@@ -232,7 +208,6 @@ bool PlatformerScene::Init()
     // Assign cameras to maps.
     backgroundMap->SetCamera(&worldCamera);
     worldMap->SetCamera(&worldCamera);
-    if(testParallaxMap) testParallaxMap->SetCamera(&worldCamera);
     guiMap->SetCamera(&guiCamera);
     infoMap->SetCamera(&infoCamera);
 
@@ -363,7 +338,6 @@ void PlatformerScene::UpdateEngineObjects()
 {
     backgroundMap->UpdateEngineMap();
     worldMap->UpdateEngineMap();
-    if(testParallaxMap) testParallaxMap->UpdateEngineMap();
     guiMap->UpdateEngineMap();
     infoMap->UpdateEngineMap();
 }

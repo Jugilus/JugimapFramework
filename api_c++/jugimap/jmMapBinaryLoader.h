@@ -20,92 +20,16 @@ class GraphicItem;
 class SourceSprite;
 class VectorShape;
 class FrameAnimation;
+class Layer;
 class SpriteLayer;
 class VectorLayer;
 class ComposedSprite;
 class ObjectFactory;
+class BinaryStreamReader;
 
 
 
-class BinaryStreamReader
-{
-public:
-
-    virtual ~BinaryStreamReader() {}
-
-    virtual bool IsOpen() = 0;
-    virtual int Pos() = 0;
-    virtual void Seek(int _pos) = 0;
-    virtual int Size() = 0;
-
-    virtual unsigned char ReadByte() = 0;
-    virtual int ReadInt() = 0;
-    virtual float ReadFloat() = 0;
-    virtual double ReadDouble() = 0;
-    virtual std::string ReadString(int length) = 0;
-    virtual std::string ReadStringWithWrittenLength()
-    {
-        int length = ReadInt();
-        return ReadString(length);
-     }
-
-};
-
-
-
-class StdBinaryStreamReader : public BinaryStreamReader
-{
-public:
-
-    StdBinaryStreamReader(const std::string &fileName);
-
-    bool IsOpen() override {return fs.is_open();}
-    int Pos() override {return fs.tellg();}
-    void Seek(int _pos) override {fs.seekg(_pos);}
-    //bool AtEnd(){return fs.eof();}
-    int Size() override {return size;}
-
-
-    unsigned char ReadByte()  override
-    {
-        unsigned char value;
-        fs.read(reinterpret_cast<char*>(&value), 1);
-        return value;
-    }
-
-    int ReadInt()  override
-    {
-        int value;
-        fs.read(reinterpret_cast<char*>(&value), 4);
-        return value;
-    }
-
-    float ReadFloat()  override
-    {
-        float value;
-        fs.read(reinterpret_cast<char*>(&value), 4);
-        return value;
-    }
-
-    double ReadDouble() override
-    {
-        double value;
-        fs.read(reinterpret_cast<char*>(&value), 8);
-        return value;
-    }
-
-    std::string ReadString(int length) override;
-
-
-private:
-    std::ifstream fs;
-    int size;
-};
-
-
-
-
-/// \ingroup Loaders
+/// \ingroup MapLoaders
 /// \brief The JugiMapBinaryLoader class loads data from jugimap binary files (.jmb).
 class JugiMapBinaryLoader
 {
@@ -150,6 +74,7 @@ private:
     jugimap::VectorShape *LoadVectorShape(BinaryStreamReader &stream, int size, bool vectorLayerShape=true);
     jugimap::FrameAnimation *LoadFrameAnimation(BinaryStreamReader &stream, int size, jugimap::SourceSprite *ss);
     bool LoadParameters(BinaryStreamReader &stream, std::vector<Parameter> &parameters);
+    void LoadParallaxAndScreenLayerParameters(BinaryStreamReader &stream, Layer *layer);
     void InitCollisionShapes(GraphicItem *gi);
 
 
@@ -172,6 +97,8 @@ private:
         static const int CHILD_ITEMS = 210;
         static const int PARAMETERS = 220;
         static const int CONSTANT_PARAMETERS = 230;
+        static const int PARALLAX_LAYER_PARAMETERS = 240;
+        static const int SCREEN_LAYER_PARAMETERS = 250;
 
         static const int SOURCE_SETS = 300;
         static const int SOURCE_SET = 310;
@@ -239,6 +166,37 @@ private:
     static const int jmBEZIER_POLYCURVE = 3;
     static const int jmELLIPSE = 4;
     static const int jmSINGLE_POINT = 5;
+
+    // parallax layer modes
+    //static const int typeSTANDARD_PARALLAX_LAYER = 0;
+    //static const int typeSTRETCHING_SINGLE_SPRITE_LAYER = 1;
+
+    static const int typePARALLAX_LAYER = 0;
+    static const int typePARALLAX_STRETCHING_SINGLE_SPRITE = 1;
+    static const int typeSCREEN_LAYER = 2;
+    static const int typeSCREEN_STRETCHING_SINGLE_SPRITE = 3;
+
+
+    static const int stretchXY_WORLD_SIZE = 0;
+    static const int stretchXY_VIEWPORT_SIZE = 1;
+
+    //static const int plNO_CHANGE = 0;
+    //static const int plTILING_X = 1;
+    //static const int plTILING_Y = 2;
+    //static const int plTILING_XY = 3;
+    //static const int plSINGLE_SPRITE_STRETCH_X = 4;
+    //static const int plSINGLE_SPRITE_STRETCH_Y = 5;
+    //static const int plSINGLE_SPRITE_STRETCH_XY = 6;
+
+    //--- align
+    //static const int jmALIGN_X_LEFT = 0;
+    //static const int jmALIGN_X_MIDDLE = 1;
+    //static const int jmALIGN_X_RIGHT = 2;
+
+    //---
+    //static const int jmALIGN_Y_TOP = 0;
+    //static const int jmALIGN_Y_MIDDLE = 1;
+    //static const int jmALIGN_Y_BOTTOM = 2;
 
 
 

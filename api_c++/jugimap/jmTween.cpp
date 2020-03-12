@@ -92,7 +92,7 @@ void Tween::Resume()
 }
 
 
-void Tween::Update()
+float Tween::Update()
 {
 
     if(state==statePLAYING){
@@ -118,7 +118,7 @@ void Tween::Update()
                     value = valueStart;
                 }
                 state = stateIDLE;
-                return;
+                return value;
             }
         }
 
@@ -134,6 +134,8 @@ void Tween::Update()
         value = valueStart + p*(valueEnd - valueStart);
 
     }
+
+    return value;
 }
 
 

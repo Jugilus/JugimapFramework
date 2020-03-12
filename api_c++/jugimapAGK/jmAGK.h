@@ -16,6 +16,71 @@
 namespace jugimap {
 
 
+
+/// \ingroup EngineExtension_AGK-tier2
+/// \brief Extended BinaryStreamReader class for AGK.
+class BinaryFileStreamReaderAGK : public BinaryStreamReader
+{
+public:
+
+    ///\brief Constructor
+    ///
+    /// Creates a new BinaryFileStreamReaderAGK object and open the file *fileName* for reading.
+    /// This reader utilizes AGK's file reader and the file path must follow the requirements of that reader.
+    BinaryFileStreamReaderAGK(const std::string &fileName)
+    {
+        if(agk::GetFileExists(fileName.c_str())){
+            agkId = agk::OpenToRead(fileName.c_str());
+            if(agkId>0){
+                opened = true;
+            }
+        }else{
+            opened = false;
+        }
+    }
+
+
+    bool IsOpen() override { return opened; }
+    int Pos() override { return agk::GetFilePos(agkId); }
+    void Seek(int _pos) override { agk::SetFilePos(agkId, _pos); }
+    int Size() override { return agk::GetFileSize(agkId); }
+
+
+    unsigned char ReadByte()  override
+    {
+        unsigned char value = agk::ReadByte(agkId);
+        return value;
+    }
+
+    int ReadInt()  override
+    {
+        int value = agk::ReadInteger(agkId);
+        return value;
+    }
+
+    float ReadFloat()  override
+    {
+        float value = agk::ReadFloat(agkId);
+        return value;
+    }
+
+    std::string ReadString() override
+    {
+        char *str = agk::ReadString2(agkId);
+        std::string value(str);
+        agk::DeleteString(str);
+        return value;
+    }
+
+
+private:
+    unsigned int agkId = 0;
+    bool opened = false;
+};
+
+
+
+
 /// \ingroup EngineExtension_AGK-tier2
 /// \brief Extended GraphicItem class for AGK.
 class GraphicItemAGK : public GraphicItem
@@ -322,6 +387,8 @@ void DeleteShaders();
 class ObjectFactoryAGK : public ObjectFactory
 {
 public:
+
+    BinaryStreamReader* NewBinaryFileStreamReader(const std::string &fileName) override { return new BinaryFileStreamReaderAGK(fileName); }
 
     GraphicFile* NewFile() override { return new GraphicFileAGK(); }
 

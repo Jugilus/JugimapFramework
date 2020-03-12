@@ -80,31 +80,7 @@ scenes based on JugiMap maps.
 The API library provides an engine independent interface for managing map elements. It is possible to manipulate engine objects directly but you should not mix direct manipulation and manipulation via interface as that would lead to synchronization issues between jugimap and engine objects. It is recommended to use direct manipulation only for things not supported by the library, e.g. for sprites in physics simulation.
 
 
-<h2>API Demo Test</h2>
+<h3>Programming Examples</h3>
 
-An extensive example of setting up and using a scene from JugiMap maps is an application called API Demo Test. It's source code is available for all supported engines and should be examined by developers interested in using JugiMap maps in their projects. 
-
-Features:
-
-- A scene with world, parallax and screen maps. Covered subjects include:
-   - Loading maps.
-   - Initializing maps.
-   - Initializing map cameras.
-   - Creating and adding *text layers* and *drawing layers* to maps.
-   - Manually creating a map with a layer and a sprite.
-   - Starting scene.
-   - Updating scene.
-	 
-- Game entities from jugimap sprites. Covered subjects include:
-   - Setting up and updating entities.
-   - Managing sprite frame animation.
-   - Using sprite colliders with a custom collision system.
-   - Dynamically adding and removing entities.
-	 
-- A simple GUI. Covered subjects include:
-   - Creating and using buttons from sprites and text objects.
-	
-- Physics test (for engines which provide a 2d physics system). Covered subjects include: 
-   - Using sprites as dynamic objects in physics simulation. 
-
+The best way to get acquainted with practical usage of JugiMap API is by examining programming examples which use it. They can be found at: https://github.com/Jugilus/jugimapAPI
 

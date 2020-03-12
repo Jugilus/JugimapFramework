@@ -15,6 +15,20 @@ namespace jugimap {
 
 
 
+std::string BinaryFileStreamReaderSFML::ReadString()
+{
+    int length = ReadInt();
+    char *buf = new char[length];
+    fis.read(buf, length);
+    std::string value(buf, length);
+    delete[] buf;
+    return value;
+}
+
+
+//===================================================================================================
+
+
 bool GraphicFileSFML::textureSmoothFilter = true;
 
 

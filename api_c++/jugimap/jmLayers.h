@@ -97,16 +97,38 @@ public:
     int GetZOrder() {return zOrder;}
 
 
+    /// \brief Update the map bounding box of this layer.
+    virtual void UpdateBoundingBox(){}
+
+
+    /// \brief Returns the map bounding box of this layer.
+    Rectf GetBoundingBox(){ return boundingBox;}
+
+
+    ///\brief Returns the LayerType factor of this layer.
+    ///
+    /// This factor is used for layers stored in parallax maps.
+    LayerType GetLayerType(){ return layerType;}
+
+
     ///\brief Returns the AlignX factor of this layer.
     ///
     /// This factor is used for layers stored in parallax maps and screen maps.
-    AlignX GetAlignX() {return alignX;}
+    //AlignX GetAlignX() {return alignX;}
 
 
     ///\brief Returns the AlignY factor of this layer.
     ///
     /// This factor is used for layers stored in parallax maps and screen maps.
-    AlignY GetAlignY() {return alignY;}
+    //AlignY GetAlignY() {return alignY;}
+
+    StretchingVariant GetStretchingVariant(){ return stretchingVariant;}
+
+
+    ///\brief Returns the allign position factor of this layer.
+    ///
+    /// This position is used for layers stored in parallax maps and screen maps.
+    Vec2i GetAlignPosition(){ return alignPosition; }
 
 
     ///\brief Returns the allign offset factor of this layer.
@@ -124,7 +146,10 @@ public:
     ///\brief Returns the ParallaxLayerMode factor of this layer.
     ///
     /// This factor is used for layers stored in parallax maps.
-    ParallaxLayerMode GetParallaxLayerMode(){ return parallaxLayerMode;}
+    //ParallaxLayerMode GetParallaxLayerMode(){ return parallaxLayerMode;}
+
+
+
 
 
     ///\brief Returns the parallax factor of this layer.
@@ -143,7 +168,7 @@ public:
     ///\brief Returns the ScreenLayerMode factor of this layer.
     ///
     /// This factor is used for layers stored in screen maps.
-    ScreenLayerMode GetScreenLayerMode(){ return screenLayerMode;}
+    //ScreenLayerMode GetScreenLayerMode(){ return screenLayerMode;}
 
 
     //-------
@@ -160,46 +185,45 @@ public:
     void _SetKind(LayerKind _kind){ kind = _kind; }
 
 
-    ///\brief Sets the parallax layer mode of this layer to the given *_parallaxLayerMode*.
+    ///\brief Sets the layer mode of this layer to the given *_layerType*.
     ///
     /// This function is available for the cases where we manually create layers.
-    void _SetParallaxLayerMode(ParallaxLayerMode _parallaxLayerMode){ parallaxLayerMode = _parallaxLayerMode; }
+    void _SetLayerType(LayerType _layerType){ layerType = _layerType; }
 
 
     ///\brief Sets the parallax factor of this layer to the given *_parallaxFactor*.
     ///
+    /// The parallax factor is used only for layers of LayerType::PARALLAX
     /// This function is available for the cases where we manually create layers.
     void _SetParallaxFactor(Vec2f _parallaxFactor){ parallaxFactor = _parallaxFactor; }
 
 
-    ///\brief Sets the screen layer mode of this layer to the given *_screenLayerMode*.
+    ///\brief Sets the align position of this layer to the given *_alignPosition*.
     ///
+    /// The align position is used only for layers of LayerType::PARALLAX and LayerType::SCREEN
     /// This function is available for the cases where we manually create layers.
-    void _SetScreenLayerMode(ScreenLayerMode _screenLayerMode){ screenLayerMode = _screenLayerMode; }
-
-
-    ///\brief Sets the align X factor of this layer to the given *alignX*.
-    ///
-    /// This function is available for the cases where we manually create layers.
-    void _SetAlignX(AlignX _alignX){ alignX = _alignX; }
-
-
-    ///\brief Sets the align X factor of this layer to the given *_alignY*.
-    ///
-    /// This function is available for the cases where we manually create layers.
-    void _SetAlignY(AlignY _alignY){ alignY = _alignY; }
+    void _SetAlignPosition(Vec2i _alignPosition){ alignPosition = _alignPosition; }
 
 
     ///\brief Sets the align offset of this layer to the given *_alignOffset*.
     ///
+    /// The align offset is used only for layers of LayerType::PARALLAX and LayerType::SCREEN
     /// This function is available for the cases where we manually create layers.
     void _SetAlignOffset(Vec2f _alignOffset){ alignOffset = _alignOffset; }
 
 
-    ///\brief Sets the linked layer name of this layer to the given *_linkedLayerName*.
+    ///\brief Sets the 'attachToLayer'  of this layer to the given *_attachToLayer*.
     ///
+    /// The 'attachToLayer' is used only for layers of LayerType::PARALLAX and LayerType::SCREEN
     /// This function is available for the cases where we manually create layers.
-    void _SetLinkedLayerName(std::string _linkedLayerName){ linkedLayerName = _linkedLayerName; }
+    void _SetAttachToLayer(std::string _attachToLayer){ attachToLayer = _attachToLayer; }
+
+
+    ///\brief Sets the stretching variant of this layer to the given *_stretchingVariant*.
+    ///
+    /// The stretching variant is used only for layer of LayerType::PARALLAX_STRETCHING_SINGLE_SPRITE.
+    /// This function is available for the cases where we manually create layers.
+    void _SetStretchingVariant(StretchingVariant _stretchingVariant){ stretchingVariant = _stretchingVariant;}
 
 
     ///\brief Sets the z-order factor of this layer to the given *_zOrder*.
@@ -210,8 +234,11 @@ public:
 
 protected:
 
-
     bool UpdateParallaxOffset();
+
+
+    //---
+    Rectf boundingBox;
 
 
 private:
@@ -222,23 +249,39 @@ private:
     LayerKind kind = LayerKind::NOT_DEFINED;
     std::string name = "Layer";
     std::vector<jugimap::Parameter> parameters;            // Custom parameters from JugiMap editor.
+
     //---
     int zOrder = 0;                                      // Drawing order of layer sprites (used by some engines)
 
+
+
     //---- properties of layers of the parallax maps
-    ParallaxLayerMode parallaxLayerMode = ParallaxLayerMode::NO_CHANGE;
+    //ParallaxLayerMode parallaxLayerMode = ParallaxLayerMode::STANDARD;
+    LayerType layerType = LayerType::WORLD;
+    Vec2i alignPosition;
+    Vec2f alignOffset;
     Vec2f parallaxFactor;
+    Vec2i tilingCount;
+    Vec2i tilingSpacing;
+    Vec2i tilingSpacingDelta;
+    Vec2i tilingCountAutoSpread;                                                    //boolean Flag
+    StretchingVariant stretchingVariant = StretchingVariant::XY_TO_WORLD_SIZE;
+
     Vec2f parallaxOffset;
 
     //---- properties of layers of the screen maps
-    ScreenLayerMode screenLayerMode = ScreenLayerMode::NO_CHANGE;
+    //ScreenLayerMode screenLayerMode = ScreenLayerMode::STANDARD;
 
     //---- properties of layers of the parallax and screen maps
-    AlignX alignX = AlignX::MIDDLE;
-    AlignY alignY = AlignY::MIDDLE;
-    Vec2f alignOffset;
+    //AlignX alignX = AlignX::MIDDLE;
+    //AlignY alignY = AlignY::MIDDLE;
 
-    std::string linkedLayerName;
+
+    //bool alignOffsetX_obtainFromMap = false;
+    //bool alignOffsetY_obtainFromMap = false;
+    Vec2i alignOffset_obtainFromMap;
+
+    std::string attachToLayer;
     Vec2f layersPlaneSize;
 
 
@@ -266,14 +309,14 @@ public:
     SpriteLayer();
 
     /// Destructor
-    virtual ~SpriteLayer();
+    virtual ~SpriteLayer() override;
 
 
     //----
-    virtual void InitEngineLayer();
-    virtual void InitLayerParameters();
-    virtual void UpdateEngineLayer();
-    virtual void DrawEngineLayer();
+    virtual void InitEngineLayer() override;
+    virtual void InitLayerParameters() override;
+    virtual void UpdateEngineLayer() override;
+    virtual void DrawEngineLayer()override;
 
 
     /// \brief Returns a reference to the vector of stored sprites in this sprite layer.
@@ -281,11 +324,7 @@ public:
 
 
     /// \brief Update the map bounding box of this sprite layer.
-    void UpdateBoundingBox();
-
-
-    /// \brief Returns the map bounding box of this sprite layer.
-    Rectf GetBoundingBox(){ return boundingBox;}
+    virtual void UpdateBoundingBox() override;
 
 
     /// \brief Sets the alpha factor of this sprite layer to the given *_alpha*.
@@ -403,12 +442,13 @@ private:
     //---
     std::vector<Sprite*>sprites;                        // OWNED sprites.
     bool editorTileLayer = false;
-    Rectf boundingBox;
     bool spritesChanged = false;
     int spritesChangeFlag = 0;
 
 
     void UpdateSingleSpriteStretch(Vec2i _designSize, bool _stretchX, bool _stretchY);
+
+    bool UpdateStretchingSingleSpriteLayer();
 
 };
 
@@ -433,11 +473,13 @@ public:
     VectorLayer();
 
     /// Destructor.
-    ~VectorLayer();
+    virtual ~VectorLayer() override;
 
 
-    virtual void InitLayerParameters();
-    virtual void UpdateEngineLayer();
+    virtual void InitLayerParameters() override;
+    virtual void UpdateEngineLayer() override;
+
+    virtual void UpdateBoundingBox() override;
 
 
     /// \brief Returns a reference to the vector of stored shapes in this vector layer.

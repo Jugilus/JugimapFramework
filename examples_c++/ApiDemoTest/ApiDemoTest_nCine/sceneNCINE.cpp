@@ -26,7 +26,6 @@ PlatformerSceneNC::~PlatformerSceneNC()
 
 
 
-
 bool PlatformerSceneNC::Init()
 {
 
@@ -77,7 +76,6 @@ bool PlatformerSceneNC::Init()
     SetEngineSceneLink(ncNode);
     ncNode->addChildNode(static_cast<jm::MapNC*>(backgroundMap)->GetMapNCNode());
     ncNode->addChildNode(static_cast<jm::MapNC*>(worldMap)->GetMapNCNode());
-    if(testParallaxMap) ncNode->addChildNode(static_cast<jm::MapNC*>(testParallaxMap)->GetMapNCNode());
     ncNode->addChildNode(static_cast<jm::MapNC*>(guiMap)->GetMapNCNode());
     ncNode->addChildNode(static_cast<jm::MapNC*>(infoMap)->GetMapNCNode());
 

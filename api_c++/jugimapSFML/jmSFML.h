@@ -19,6 +19,63 @@
 namespace jugimap {
 
 
+/// \ingroup EngineExtension_SFML
+/// \brief Extended BinaryStreamReader class for SFML.
+class BinaryFileStreamReaderSFML : public BinaryStreamReader
+{
+public:
+
+    ///\brief Constructor
+    ///
+    /// Creates a new BinaryStreamReaderSFML object and open the file *fileName* for reading.
+    /// This reader utilizes SFML's reader and the file path must follow the requirements of that reader.
+    BinaryFileStreamReaderSFML(const std::string &fileName)
+    {
+        opened = fis.open(fileName);
+    }
+
+
+    bool IsOpen() override {return opened;}
+    int Pos() override {return fis.tell();}
+    void Seek(int _pos) override {fis.seek(_pos);}
+    int Size() override {return fis.getSize();}
+
+
+    unsigned char ReadByte()  override
+    {
+        unsigned char value;
+        fis.read(reinterpret_cast<char*>(&value), 1);
+        return value;
+    }
+
+    int ReadInt()  override
+    {
+        int value;
+        fis.read(reinterpret_cast<char*>(&value), 4);
+        return value;
+    }
+
+    float ReadFloat()  override
+    {
+        float value;
+        fis.read(reinterpret_cast<char*>(&value), 4);
+        return value;
+    }
+
+
+    std::string ReadString() override;
+
+
+private:
+    sf::FileInputStream fis;
+    bool opened = false;
+};
+
+
+
+//===================================================================================================
+
+
 
 /// \ingroup EngineExtension_SFML
 /// \brief Extended GraphicFile class for SFML.
@@ -251,10 +308,9 @@ class ObjectFactorySFML : public ObjectFactory
 {
 public:
 
+    virtual BinaryStreamReader* NewBinaryFileStreamReader(const std::string &fileName) override { return new BinaryFileStreamReaderSFML(fileName);}
     virtual GraphicFile* NewFile() override { return new GraphicFileSFML(); }
-
     virtual Map* NewMap() override { return new MapSFML(); }
-
     virtual StandardSprite *NewStandardSprite() override { return new StandardSpriteSFML (); }
 
     virtual Font* NewFont(const std::string &_relativeFilePath, int _size, FontKind _fontKind) override

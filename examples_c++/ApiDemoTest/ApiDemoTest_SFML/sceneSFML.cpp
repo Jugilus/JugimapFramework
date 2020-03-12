@@ -45,7 +45,6 @@ bool PlatformerSceneSFML::Init()
     backgroundMap->CaptureForLerpDrawing();
     worldMap->CaptureForLerpDrawing();
     guiMap->CaptureForLerpDrawing();
-    if(testParallaxMap) testParallaxMap->CaptureForLerpDrawing();
     infoMap->CaptureForLerpDrawing();
 
     return true;
@@ -74,15 +73,6 @@ void PlatformerSceneSFML::Draw()
         static_cast<jugimap::MapSFML*>(worldMap)->UpdateAndDrawEngineMap();
 
 
-        if(testParallaxMap){
-            testParallaxMap->SetCamera(&worldCameraA);
-            static_cast<jugimap::MapSFML*>(testParallaxMap)->UpdateAndDrawEngineMap();
-
-            testParallaxMap->SetCamera(&worldCameraB);
-            static_cast<jugimap::MapSFML*>(testParallaxMap)->UpdateAndDrawEngineMap();
-        }
-
-
     }else{
 
         backgroundMap->SetCamera(&worldCamera);
@@ -91,10 +81,6 @@ void PlatformerSceneSFML::Draw()
         worldMap->SetCamera(&worldCamera);
         static_cast<jugimap::MapSFML*>(worldMap)->UpdateAndDrawEngineMap();
 
-        if(testParallaxMap){
-            testParallaxMap->SetCamera(&worldCamera);
-            static_cast<jugimap::MapSFML*>(testParallaxMap)->UpdateAndDrawEngineMap();
-        }
     }
 
 

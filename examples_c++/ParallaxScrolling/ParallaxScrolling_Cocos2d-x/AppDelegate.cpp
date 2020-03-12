@@ -62,7 +62,7 @@ AppDelegate::~AppDelegate()
 #endif
 
 
-    apiTestDemo::entities.Delete();
+    //apiTestDemo::entities.Delete();
     jugimap::shaders::DeleteShaders();
     jugimap::sceneManager->DeleteScenes();
     jugimap::DeleteGlobalObjects();
@@ -94,7 +94,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     if(!glview) {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
 
-        glview = GLViewImpl::createWithRect("JugiMap API Demo Test - Cocos2d-x version", cocos2d::Rect(0, 0, mediumResolutionSize.width, mediumResolutionSize.height));
+        glview = GLViewImpl::createWithRect("JugiMap Parallax Scrolling - Cocos2d-x version", cocos2d::Rect(0, 0, mediumResolutionSize.width, mediumResolutionSize.height));
 #else
         glview = GLViewImpl::create("HelloCpp");
 #endif
@@ -127,7 +127,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     jugimap::sceneManager = new jugimap::SceneManager();
 
     // path prefixes
-    jugimap::JugiMapBinaryLoader::pathPrefix = "Resources/";        // The map loader is not part of cocos2d loaders so we need to add prefix
+    //jugimap::JugiMapBinaryLoader::pathPrefix = "Resources/";        // The map loader is not part of cocos2d loaders so we need to add prefix
     //jugimap::GraphicFile::pathPrefix = "";                        // No prefix as cocos2d loaders use prefix in their loaders
     //jugimap::Font::pathPrefix = "";                               // No prefix as cocos2d loaders use prefix in their loaders
 
@@ -162,7 +162,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
     //---------------------------------------------------
 
-    jugimap::Scene* scene = jugimap::sceneManager->AddScene(new apiTestDemo::PlatformerSceneCC());
+    jugimap::Scene* scene = jugimap::sceneManager->AddScene(new ParallaxSceneCC());
     jugimap::sceneManager->SetCurrentScene(scene);
 
     if(scene->GetEngineSceneLink()==nullptr) return false;

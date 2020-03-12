@@ -2,64 +2,50 @@
 
 ## About
 
-JugiMap API Demo Test is an extensive example of how to set up and use JugiMap API in an actual project.
-It's source code is available for all supported engines.
+JugiMap API Demo Test is an application which utilizes many features of JugiMap API and serves as an extensive programming example of how to set up and manage a relatively complex scene. 
 
-You can check out a web build of API Demo test here: https://jugilus.github.io/ApiDemoTestWeb
+The application source code includes:
+
+- Programming a scene with world, parallax and screen maps.
+   - Loading maps.
+   - Initializing maps.
+   - Initializing map cameras.
+   - Creating and adding *text layers* and *drawing layers* to maps.
+   - Manually creating a map with a layer and a sprite.
+   - Starting scene.
+   - Updating scene.
+	 
+- Programming game entities using jugimap sprites.
+   - Setting up and updating entities.
+   - Managing sprite frame animation.
+   - Using sprite colliders with a custom collision system.
+   - Dynamically adding and removing entities.
+	 
+- Programming a simple GUI.
+   - Creating and using buttons from sprites and text objects.
+	
+- Physics test (for engines which provide a 2d physics system).
+   - Using sprites as dynamic objects in physics simulation. 
+
+</br>
+   
+For more information, editor map files and a web version go here: https://jugilus.github.io/Jugimap-ApiDemoTest/JugimapApiDemoTest.html
 
 
-## Setting the engine project
+## Setting up the engine project
 
-Jugimap API Demo Test uses only engine dependencies.
+Game development engines provide different ways of creating a new project and you should be familiar with that process.
 
-To prepare an engine project for a platform:
+Create a new project for engine ENGINE (COCOS2D-X, SFML, AGK, nCINE ) and name it, in example, JugiMapAPIDemoTest.
 
-### Cocos2d-x
+Add the following source code to the project:
+- JugiMap API common library - add directory *jugimap*
+- Jugimap API engine extension - add directory *jugimapENGINE*
+- Engine independent source files  - add directory: *engineIndependent*
+- Engine dependent source files - add the **content** of directory: *ApiDemoTest_ENGINE*
 
-1. Create an empty Cocos2d-x project called *ApiDemoTest* in your IDE.
-2. Copy the **content** of *ApiDemoTest_Cocos2d-x* from *examples_c++/ApiDemoTest* into the project directory.
-3. Copy directory *engineIndependent* from *examples_c++/ApiDemoTest* into the *Classes* sub-directory of the project directory.
-4. Copy directory *jugimap* from *api_c++* into the *Classes* sub-directory of the project directory.
-5. Copy directory *jugimapCOCOS2D-X* from from *api_c++* into the *Classes* sub-directory of the project directory.
-6. If the target platform is **not** Windows OS you should delete Windows specific *main.cpp* and *main.h* and add platform specific *main.cpp* and/or any other requried file. These files can be found in Cocos2d-x templates.
-7. Add all source files to the project in the IDE.
-8. Copy directory *media* into *Resources* directory which should reside in the output directory.
-9. Add Cocos2d-x dynamic libraries to output directory if needed.
-
-To set up multi-platform building use Cocos2d-x template project.
-
-### AGK tier 2
-
-1. Create an empty AGK project called *ApiDemoTest* in your IDE.
-2. Copy the **content** of *ApiDemoTest_AGK* from *examples_c++/ApiDemoTest* into the project directory.
-3. Copy directory *engineIndependent* from *examples_c++/ApiDemoTest* into the project directory.
-4. Copy directory *jugimap* from *api_c++* into the project directory.
-5. Copy directory *jugimapAGK* from from *api_c++* into the project directory.
-6. If the target platform is **not** Windows OS you should delete Windows specific *Core.cpp* and *resource.h* and add platform specific source files. These files can be found in AGK templates.
-7. Add all source files to the project in the IDE.
-8. Copy directory *media* from *examples_c++/ApiDemoTest* to the project output directory.
-
-### SFML
-
-1. Create an empty SFML project called *ApiDemoTest* in your IDE.
-2. Copy the **content** of *ApiDemoTest_SFML* from *examples_c++/ApiDemoTest* into the project directory.
-3. Copy directory *engineIndependent* from *examples_c++/ApiDemoTest* into the project directory.
-4. Copy directory *jugimap* from *api_c++* into the project directory.
-5. Copy directory *jugimapSFML* from from *api_c++* into the project directory.
-6. Add all source files to the project in the IDE.
-7. Copy directory *media* from *examples_c++/ApiDemoTest* to the project output directory.
-8. Add SFML dynamic libraries to output directory if needed.
-
-### NCine
-
-1. Create an empty nCIne project called *ApiDemoTest* in your IDE.
-2. Copy the **content** of *ApiDemoTest_nCine* from *examples_c++/ApiDemoTest* into the project directory.
-3. Copy directory *engineIndependent* from *examples_c++/ApiDemoTest* into the project directory.
-4. Copy directory *jugimap* from *api_c++* into the project directory.
-5. Copy directory *jugimapNCINE* from from *api_c++* into the project directory.
-6. Add all source files to the project in the IDE.
-8. Copy directory *media* into *data* directory which should reside in the output directory.
-9. Add nCine dynamic libraries to output directory if needed.
-
-To set up multi-platform building use nCine's template project. 
+Copy directory *media* to:
+- the working directory of the application if the engine is AGK or SFML.
+- the *Resources* subdirectory of the working directory if the engine is COCOS2D-X 
+- the *data* subdirectory of the working directory if the engine is nCINE
 

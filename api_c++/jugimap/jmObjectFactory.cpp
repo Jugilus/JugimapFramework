@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "jmBinaryLoader.h"
+#include "jmMapBinaryLoader.h"
 #include "jmCollision.h"
 #include "jmSourceGraphics.h"
 #include "jmSprites.h"
@@ -8,6 +8,7 @@
 #include "jmDrawing.h"
 #include "jmMap.h"
 #include "jmVectorShapes.h"
+#include "jmStreams.h"
 #include "jmObjectFactory.h"
 
 
@@ -17,9 +18,9 @@ namespace jugimap{
 
 
 
-BinaryStreamReader* ObjectFactory::NewBinaryStreamReader(const std::string &fileName)
+BinaryStreamReader* ObjectFactory::NewBinaryFileStreamReader(const std::string &fileName)
 {
-    return new StdBinaryStreamReader(fileName);
+    return new StdBinaryFileStreamReader(fileName);
 }
 
 

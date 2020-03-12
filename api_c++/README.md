@@ -1,4 +1,4 @@
-JugiMap API
+JugiMap API for C++
 =======================
 
 Repository content:
