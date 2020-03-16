@@ -32,6 +32,7 @@ void MyEventHandler::onPreInit(ncine::AppConfiguration &config)
 
 
     config.resolution.set(1300, 800);
+    //config.resolution.set(1920, 1080);
     config.windowTitle = "JugiMap Parallax Scrolling - nCine version";
     config.deferShaderQueries = false;
     config.withVSync = true;
@@ -91,20 +92,20 @@ void MyEventHandler::onFrameStart()
 #ifdef __ANDROID__
 void MyEventHandler::onTouchDown(const ncine::TouchEvent &event)
 {
-    apiTestDemo::mouse.SetPressed(true);
-    apiTestDemo::mouse.SetHit(true);
-    apiTestDemo::mouse.SetScreenPosition(jugimap::Vec2f(event.pointers[0].x, event.pointers[0].y));
+    mouse.SetPressed(true);
+    mouse.SetHit(true);
+    mouse.SetScreenPosition(jugimap::Vec2f(event.pointers[0].x, event.pointers[0].y));
 }
 
 void MyEventHandler::onTouchUp(const ncine::TouchEvent &event)
 {
-    apiTestDemo::mouse.SetPressed(false);
-    apiTestDemo:: mouse.SetHit(false);
+    mouse.SetPressed(false);
+    mouse.SetHit(false);
 }
 
 void MyEventHandler::onTouchMove(const ncine::TouchEvent &event)
 {
-    apiTestDemo::mouse.SetScreenPosition(jugimap::Vec2f(event.pointers[0].x, event.pointers[0].y));
+    mouse.SetScreenPosition(jugimap::Vec2f(event.pointers[0].x, event.pointers[0].y));
 }
 #endif
 
