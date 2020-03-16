@@ -112,6 +112,7 @@ public:
     /// - For a world map it is the size of the map.
     /// - For a parallax map it is the size of the linked world map.
     /// - For a screen map it is not defined (zero vector).
+    /// This function should not be called before the map initalization (calling InitWorldMap, InitParallaxMap or InitScreenMap)!
     Vec2i GetWorldMapSize() { return worldMapSize; }
 
 
@@ -120,7 +121,19 @@ public:
     /// The returned value depends of the map type:
     /// - For world maps and parallax maps it is not defined.
     /// - For a screen map it is the design size set at initialization.
+    /// This function should not be called before the map initalization (calling InitWorldMap, InitParallaxMap or InitScreenMap)!
     Vec2i GetScreenMapDesignSize() { return screenMapDesignSize; }
+
+
+    ///\brief Returns the size of this map.
+    ///
+    /// This function should not be called before the map initalization (calling InitWorldMap, InitParallaxMap or InitScreenMap)!
+    //Vec2i GetSize() { return Vec2i(boundingBox.Width(), boundingBox.Height());}
+
+
+    void ModifyXParallaxFactorsForFixedMapWidth(Vec2i _designViewport);
+
+    void ModifyYParallaxFactorsForFixedMapHeight(Vec2i _designViewport);
 
 
     ///\brief Capture the sprite properties, usually the position only,  required for the *lerp drawing*.

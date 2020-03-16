@@ -279,7 +279,7 @@ private:
 
     //bool alignOffsetX_obtainFromMap = false;
     //bool alignOffsetY_obtainFromMap = false;
-    Vec2i alignOffset_obtainFromMap;
+    Vec2i alignOffset_obtainFromMap;                                                //boolean Flag
 
     std::string attachToLayer;
     Vec2f layersPlaneSize;

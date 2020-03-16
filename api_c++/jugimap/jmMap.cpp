@@ -188,10 +188,6 @@ void Map::InitParallaxMap(Vec2i _worldMapSize)
     Normalize();
     SetLayersPlanes();
 
-    //----
-
-
-
     // Parallax layers must be visible at any world position.
     // If the size from the editor is not big enough we duplicate and offset sprites until we get the needed size.
     //TileLayers();
@@ -375,6 +371,22 @@ void Map::Normalize()
     }
 
     boundingBox = Rectf(0,0, boundingBox.Width(), boundingBox.Height());
+
+
+
+    boundingBox = Rectf(999999.0, 999999.0, -999999.0, -999999.0);
+
+    for(Layer *l : layers){
+        if(l->GetKind()==LayerKind::SPRITE){
+            SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+            boundingBox = boundingBox.Unite(sl->boundingBox);
+
+            //DbgOutput("layer:"+ l->name + " BB min x:" + std::to_string(sl->boundingBox.min.x) + " y:" + std::to_string(sl->boundingBox.min.y)
+            //                           + " BB max x:" + std::to_string(sl->boundingBox.max.x) + " y:" + std::to_string(sl->boundingBox.max.y));
+        }
+    }
+    DbgOutput("normalized map:"+ name + " BB min x:" + std::to_string(boundingBox.min.x) + " y:" + std::to_string(boundingBox.min.y)
+                           + " BB max x:" + std::to_string(boundingBox.max.x) + " y:" + std::to_string(boundingBox.max.y));
 }
 
 
@@ -513,7 +525,6 @@ void Map::SetLayersPlanes()
                 assert(false);
             }
         }
-
 
         //--- tile layers
         Vec2f layersPlaneSize = planeLayers.front()->layersPlaneSize;
@@ -714,7 +725,59 @@ void Map::SetLayersPlanes()
 
 
     }
+
 }
+
+
+void Map::ModifyXParallaxFactorsForFixedMapWidth(Vec2i _designViewport)
+{
+
+    if(_designViewport.x==settings.GetScreenSize().x) return;
+    if(worldMapSize.x <= _designViewport.x) return;
+
+    // boundingBox is original from editor and normalized (not modified by SetLayersPlanes) !
+    float fXstoredDef = (boundingBox.Width() - _designViewport.x)/float(worldMapSize.x - _designViewport.x);
+
+    float fXnew = 0;
+    if(boundingBox.Width()>settings.GetScreenSize().x  &&  worldMapSize.x > settings.GetScreenSize().x){
+        fXnew = (boundingBox.Width() - settings.GetScreenSize().x)/float(worldMapSize.x - settings.GetScreenSize().x);
+    }
+
+    for(Layer *l : layers){
+        if(l->GetLayerType()!=LayerType::PARALLAX) continue;
+
+        float delta = l->GetParallaxFactor().x/fXstoredDef;
+        Vec2f f(fXnew * delta, l->GetParallaxFactor().y);
+        l->_SetParallaxFactor(f);
+    }
+
+}
+
+
+void Map::ModifyYParallaxFactorsForFixedMapHeight(Vec2i _designViewport)
+{
+
+    if(_designViewport.y==settings.GetScreenSize().y) return;
+    if(worldMapSize.y <= _designViewport.y) return;
+
+    float fYstoredDef = (boundingBox.Height() - _designViewport.y)/float(worldMapSize.y - _designViewport.y);
+
+    float fYnew = 0;
+    if(boundingBox.Height()>settings.GetScreenSize().y  &&  worldMapSize.y > settings.GetScreenSize().y){
+        fYnew = (boundingBox.Height() - settings.GetScreenSize().y)/float(worldMapSize.y - settings.GetScreenSize().y);
+    }
+
+    for(Layer *l : layers){
+        if(l->GetLayerType()!=LayerType::PARALLAX) continue;
+
+        float delta = l->GetParallaxFactor().y/fYstoredDef;
+        Vec2f f(l->GetParallaxFactor().x, fYnew * delta);
+        l->_SetParallaxFactor(f);
+    }
+
+}
+
+
 
 
 /*

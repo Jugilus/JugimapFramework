@@ -178,6 +178,11 @@ bool ParallaxScene::Init()
     // First initialize world map as its size is needed for parallax maps!
     worldMap->InitWorldMap();
     backgroundMap->InitParallaxMap(worldMap->GetWorldMapSize());
+
+    // The parallax map has fixed height (no tiling) and y parallax factors set in the editor are valid for a designed size 1300x800.
+    // If screen (viewport) size has different height we need to adjust these factors, otherwise parallax layers are not positioned correctly in y direction.
+    backgroundMap->ModifyYParallaxFactorsForFixedMapHeight(Vec2i(1300,800));
+
     if(testScreenMap) testScreenMap->InitScreenMap(Vec2i(200, settings.GetScreenSize().y));
 
     // Initialize engine maps - creates engine objects (textures, sprites...) and get ready everything for action
