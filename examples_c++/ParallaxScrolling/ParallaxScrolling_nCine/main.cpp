@@ -1,5 +1,6 @@
 #include <ncine/Application.h>
 #include <ncine/IFile.h>
+#include <ncine/FileSystem.h>
 #include "main.h"
 #include "sceneNCINE.h"
 
@@ -52,10 +53,10 @@ void MyEventHandler::onInit()
     //---------------------------------------------------
 
     #if !defined (__ANDROID__)
-        jugimap::JugiMapBinaryLoader::pathPrefix = std::string(ncine::IFile::dataPath().data());
+        jugimap::JugiMapBinaryLoader::pathPrefix = std::string(ncine::FileSystem::dataPath().data());
     #endif
-    jugimap::GraphicFile::pathPrefix = std::string(ncine::IFile::dataPath().data());
-    jugimap::Font::pathPrefix = std::string(ncine::IFile::dataPath().data());
+    jugimap::GraphicFile::pathPrefix = std::string(ncine::FileSystem::dataPath().data());
+    jugimap::Font::pathPrefix = std::string(ncine::FileSystem::dataPath().data());
 
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(ncine::theApplication().widthInt(), ncine::theApplication().heightInt()));

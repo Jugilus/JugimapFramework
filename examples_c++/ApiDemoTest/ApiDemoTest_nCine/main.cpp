@@ -1,5 +1,6 @@
 #include <ncine/Application.h>
 #include <ncine/IFile.h>
+#include <ncine/FileSystem.h>
 #include "main.h"
 #include "sceneNCINE.h"
 
@@ -51,10 +52,10 @@ void MyEventHandler::onInit()
     //---------------------------------------------------
 
     #if !defined (__ANDROID__)
-        jugimap::JugiMapBinaryLoader::pathPrefix = std::string(ncine::IFile::dataPath().data());
+        jugimap::JugiMapBinaryLoader::pathPrefix = std::string(ncine::FileSystem::dataPath().data());
     #endif
-    jugimap::GraphicFile::pathPrefix = std::string(ncine::IFile::dataPath().data());
-    jugimap::Font::pathPrefix = std::string(ncine::IFile::dataPath().data());
+    jugimap::GraphicFile::pathPrefix = std::string(ncine::FileSystem::dataPath().data());
+    jugimap::Font::pathPrefix = std::string(ncine::FileSystem::dataPath().data());
 
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(ncine::theApplication().widthInt(), ncine::theApplication().heightInt()));
@@ -88,7 +89,7 @@ void MyEventHandler::onFrameStart()
 
 
 
-#ifdef __ANDROID__
+//#ifdef __ANDROID__
 void MyEventHandler::onTouchDown(const ncine::TouchEvent &event)
 {
     apiTestDemo::mouse.SetPressed(true);
@@ -99,14 +100,14 @@ void MyEventHandler::onTouchDown(const ncine::TouchEvent &event)
 void MyEventHandler::onTouchUp(const ncine::TouchEvent &event)
 {
     apiTestDemo::mouse.SetPressed(false);
-    apiTestDemo:: mouse.SetHit(false);
+    apiTestDemo::mouse.SetHit(false);
 }
 
 void MyEventHandler::onTouchMove(const ncine::TouchEvent &event)
 {
     apiTestDemo::mouse.SetScreenPosition(jugimap::Vec2f(event.pointers[0].x, event.pointers[0].y));
 }
-#endif
+//#endif
 
 
 
