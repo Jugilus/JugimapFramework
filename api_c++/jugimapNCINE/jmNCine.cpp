@@ -379,7 +379,7 @@ void DeleteNCNode(ncine::SceneNode* _node)
 {
 
     if(deleteNCNodesSpecial){
-        nctl::List<ncine::SceneNode *>children = _node->children();     // Children list as copy (not reference)!
+        nctl::Array<ncine::SceneNode *>children = _node->children();     // Children array as copy (not reference)!
         for(ncine::SceneNode* child : children){
             DeleteNCNode(child);
         }
