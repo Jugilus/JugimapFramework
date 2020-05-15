@@ -89,7 +89,7 @@ void MyEventHandler::onFrameStart()
 
 
 
-//#ifdef __ANDROID__
+#ifdef __ANDROID__
 void MyEventHandler::onTouchDown(const ncine::TouchEvent &event)
 {
     apiTestDemo::mouse.SetPressed(true);
@@ -107,7 +107,7 @@ void MyEventHandler::onTouchMove(const ncine::TouchEvent &event)
 {
     apiTestDemo::mouse.SetScreenPosition(jugimap::Vec2f(event.pointers[0].x, event.pointers[0].y));
 }
-//#endif
+#endif
 
 
 
