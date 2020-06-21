@@ -69,7 +69,7 @@ AffineMat3f MakeTransformationMatrix(Vec2f pos, Vec2f scale, Vec2i flip, float r
 AffineMat3f MakeTransformationMatrix(Vec2f pos, Vec2f scale, Vec2i flip, float rotation)
 {
     AffineMat3f m = AffineMat3f::Translation(pos.x, pos.y);
-    m = m.Rotate(rotation*pi/180.0);
+    m = m.Rotate(rotation*mathPI/180.0);
     float scaleX = scale.x;
     if(flip.x) scaleX = -scaleX;
     float scaleY = scale.y;

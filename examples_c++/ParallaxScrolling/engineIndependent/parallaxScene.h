@@ -94,9 +94,13 @@ protected:
     jugimap::ScreenMapCamera screenCamera;
     CameraController cameraController;
 
-    jugimap::SpritesFrameAnimationPlayer aniPlayerA;
-    jugimap::StandardSpriteFrameAnimationPlayer aniPlayerB;
-    jugimap::StandardSpriteFrameAnimationPlayer aniPlayerC;
+    jugimap::AnimationPlayer aniPlayerA;
+    jugimap::AnimationPlayer aniPlayerB;
+    jugimap::AnimationPlayer aniPlayerC;
+
+    jugimap::AnimationInstance *aniA = nullptr;                     // OWNED
+    jugimap::AnimationInstance *aniB = nullptr;                     // OWNED
+    jugimap::AnimationInstance *aniC = nullptr;                     // OWNED
 
     //--- starting zOrder value for map layering (for engines which handle sprites drawing order by the 'z-order' parameter)
     int zOrderBackgroundMap = 1000;

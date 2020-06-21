@@ -122,6 +122,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     //---------------------------------------------------
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(director->getVisibleSize().width, director->getVisibleSize().height));
+    jugimap::settings.SetZOrderStep(10);                                        // Z-order step for setting z-order for layers.
     jugimap::settings.SetYCoordinateUp(true);
     jugimap::objectFactory = new jugimap::ObjectFactoryCC();                    // all jugimap elements are created via 'objectFactory'
     jugimap::sceneManager = new jugimap::SceneManager();

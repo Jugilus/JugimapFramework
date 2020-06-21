@@ -21,7 +21,6 @@ bool PlatformerSceneSceneAGK::Init()
     zOrderTestParallaxMap = 3000;
     zOrderGuiMap = 2000;
     zOrderInfoMap = 1000;
-    jm::JugiMapBinaryLoader::zOrderCounterStep = -10;
 
 
     // Engine indpenedent scene initialization

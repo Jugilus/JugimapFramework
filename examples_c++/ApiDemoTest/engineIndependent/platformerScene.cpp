@@ -115,12 +115,12 @@ bool PlatformerScene::Init()
 
     // Create drawing layers for drawing sprite shapes and vector shapes on every map.
     worldMapDrawingLayer = new ShapesDrawingLayer("worldMapDrawingLayer", worldMap);
-    worldMapDrawingLayer->_SetZOrder(worldMap->GetNextZOrder(JugiMapBinaryLoader::zOrderCounterStep));    // Call this before adding the layer to the map !
+    worldMapDrawingLayer->_SetZOrder(worldMap->GetNextZOrder());    // Call this before adding the layer to the map !
     worldMap->_AddLayer(worldMapDrawingLayer);
     worldMapDrawingLayer->InitEngineLayer();
 
     guiMapDrawingLayer = new ShapesDrawingLayer("guiMapDrawingLayer", guiMap);
-    guiMapDrawingLayer->_SetZOrder(guiMap->GetNextZOrder(JugiMapBinaryLoader::zOrderCounterStep));    // Call this before adding the layer to the map !
+    guiMapDrawingLayer->_SetZOrder(guiMap->GetNextZOrder());    // Call this before adding the layer to the map !
     guiMap->_AddLayer(guiMapDrawingLayer);
     guiMapDrawingLayer->InitEngineLayer();
 
@@ -128,7 +128,7 @@ bool PlatformerScene::Init()
     //----
     // Create a text layer for 'guiMap'
     guiMapTextLayer = objectFactory->NewTextLayer("guiMapTextLayer");
-    guiMapTextLayer->_SetZOrder(guiMap->GetNextZOrder(JugiMapBinaryLoader::zOrderCounterStep));  // Call this before adding the layer to the map !
+    guiMapTextLayer->_SetZOrder(guiMap->GetNextZOrder());  // Call this before adding the layer to the map !
     guiMap->_AddLayer(guiMapTextLayer);
     guiMapTextLayer->InitEngineLayer();
 
@@ -189,7 +189,7 @@ bool PlatformerScene::Init()
     infoCamera.SetMapHandle(Vec2f(infoMap->GetScreenMapDesignSize().x/2, infoMap->GetScreenMapDesignSize().y/2));
     infoCamera.SetMapPosition(Vec2f(worldCamera.GetViewport().max.x + infoMap->GetScreenMapDesignSize().x/2 + 1, worldCamera.GetViewport().Center().y));
     infoBoxAniTween.Init(worldCamera.GetViewport().max.x + infoMap->GetScreenMapDesignSize().x/2 + 1,
-                         worldCamera.GetViewport().Center().x, 0.5, Easing::EASE_OUT);
+                         worldCamera.GetViewport().Center().x, 0.5, Easing::Kind::EASE_END);
 
 
     VectorShape *cameraPath = FindVectorShapeWithParameter(worldMap, "cameraPath", "");
@@ -368,8 +368,8 @@ void PlatformerScene::ManageDeactivateWalkers()
 
 void PlatformerScene::TestSpawnWalkers()
 {
-    for(EWalkingFella &wf : EWalkingFella::templateFellas){
-        wf.Spawn();
+    for(EWalkingFella *wf : EWalkingFella::templateFellas){
+        wf->Spawn();
     }
 }
 
@@ -641,7 +641,7 @@ void PlatformerScene::MakeButtonsAndTexts()
     // add some texts to 'worldMapTextLayer' for testing
     if(worldMapTextLayer){
         std::vector<Sprite*>platformSprites;
-        CollectSpritesWithName(worldMap, platformSprites, "Platform 1");
+        CollectSpritesWithSourceSpriteName(worldMap, platformSprites, "Platform 1");
         for(Sprite* s : platformSprites){
             Text *t = objectFactory->NewText(worldMapTextLayer, font, s->GetSourceSprite()->GetName(), s->GetPosition()+Vec2f(20,0), ColorRGBA(255,255,255,128));
             t->SetLinkObject(s);

@@ -6,6 +6,7 @@
 #ifndef JUGIMAP_NCINE_H
 #define JUGIMAP_NCINE_H
 
+#include <ncine/imgui.h>
 #include <ncine/Texture.h>
 #include <ncine/Sprite.h>
 #include <ncine/DrawableNode.h>
@@ -213,6 +214,36 @@ public:
 //===================================================================================================
 
 
+/// \ingroup EngineExtension_Cocos2d-x
+/// \brief Extended Drawer class for Cocos2d-x.
+class DrawerNC : public Drawer
+{
+public:
+
+    virtual void InitEngineDrawer() override;
+    virtual void UpdateEngineDrawer() override;
+
+    virtual void Clear() override;
+
+    virtual void SetOutlineColor(ColorRGBA _outlineColor) override;
+    virtual void Line(Vec2f p1, Vec2f p2) override;
+    virtual void RectangleOutline(const Rectf &rect) override;
+    virtual void EllipseOutline(Vec2f c, Vec2f r) override;
+    virtual void Dot(Vec2f p) override;
+
+
+private:
+    //cocos2d::Color4F outlineColor;
+    //cocos2d::DrawNode * drawNode = nullptr;         // LINK   ( Cocos2d handles ownership of engine objects. )
+
+    ImDrawList* drawList = nullptr;
+    ImColor outlineColor;
+};
+
+
+//===================================================================================================
+
+
 class MapNC;
 
 /// \ingroup EngineExtension_nCine
@@ -227,6 +258,7 @@ public:
 private:
     MapNC * map = nullptr;                  // LINK
 };
+
 
 
 //===================================================================================================
@@ -273,6 +305,8 @@ public:
 
     virtual StandardSprite *NewStandardSprite() override { return new StandardSpriteNC (); }
 
+    virtual Drawer* NewDrawer() override { return new DrawerNC(); }
+
     virtual Text* NewText(TextLayer* _textLayer, Font *_font, const std::string &_textString, Vec2f _position, ColorRGBA _color) override
     {
         return new TextNC(_textLayer, _font, _textString, _position, _color);
@@ -291,8 +325,8 @@ public:
 //===================================================================================================
 
 
-void DeleteNCNode(ncine::SceneNode* _node);
-extern bool deleteNCNodesSpecial;               // Use different way for deleting nodes with children nodes as 'delete node' causes crash in QCreator in debug mode (at least on my comp).
+//void DeleteNCNode(ncine::SceneNode* _node);
+//extern bool deleteNCNodesSpecial;               // Use different way for deleting nodes with children nodes as 'delete node' causes crash in QCreator in debug mode (at least on my comp).
 
 extern ncine::TextNode * errorMessageLabel;     // LINK
 

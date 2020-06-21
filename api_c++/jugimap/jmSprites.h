@@ -16,6 +16,7 @@ class SpriteLayer;
 class SourceSprite;
 class ComposedSprite;
 class Collider;
+struct AnimatedProperties;
 
 
 
@@ -44,15 +45,17 @@ public:
         BLEND =     1 << 6,
         OVERLAY_COLOR = 1 << 7,
 
-        DATA =      1 << 15,
+        TEXTURE =     1 << 10,
+
+        ID =        1 << 15,
         TAG =       1 << 16,
-        LINK =      1 << 17,
+        DATA =      1 << 17,
+        LINK =      1 << 18,
 
         TRANSFORMATION = POSITION | FLIP | SCALE |  ROTATION | HANDLE,
         APPEARANCE = ALPHA | BLEND | OVERLAY_COLOR,
-        ALL = TRANSFORMATION | APPEARANCE | DATA | TAG | LINK
+        ALL = TRANSFORMATION | APPEARANCE | TEXTURE | ID | TAG | DATA | LINK
     };
-
 
 
     /// Constructor.
@@ -67,7 +70,7 @@ public:
     /// \code
     /// sprite->GetLayer()->RemoveAndDeleteSprite(sprite);
     /// \endcode
-    virtual ~Sprite(){}
+    virtual ~Sprite();
 
 
     ///\brief Create a new sprite which is a passive copy of this sprite.
@@ -218,6 +221,31 @@ public:
 
 
     //------
+    ///\brief Set the id of this sprite to the given _id.
+    ///
+    /// An id is an arbitrary integer number which can be assigned to a Sprite object in the editor.
+    /// \see GetId
+    void SetId(int _id){ id = _id; }
+
+
+    ///\brief Returns the id of this sprite.
+    ///
+    /// \see SetId
+    int GetId(){ return id;}
+
+
+    ///\brief Set the name of this sprite to the given _nameID.
+    ///
+    /// A name is an arbitrary string which can be assigned to a Sprite object in the editor.
+    /// \see GetName
+    void SetName(const std::string& _nameID){ name = _nameID; }
+
+
+    ///\brief Returns the name of this sprite.
+    ///
+    /// \see SetName
+    std::string GetName(){ return name;}
+
 
 
     ///\brief Set the tag of this sprite to the given _tag.
@@ -264,7 +292,6 @@ public:
     int GetDataFlags() {return dataFlags;}
 
 
-
     // TRANSFORM PROPERTIES
     //-------------------------------------------------------------------------------
 
@@ -276,54 +303,26 @@ public:
 
     ///\brief Returns the position of this sprite.
     ///
-    /// For sprites in map layers this position matches the global position.
-    /// For sprites in layers of a composed sprite this position is relative to composed sprite coordinate system.
+    /// This is a local position which is for sprites inside the map layers also a global position.
+    /// For sprites in layers of a composed sprite this position is relative to the composed sprite coordinate system.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
     ///
     /// \see GetGlobalPosition, GetFullPosition, GetFullGlobalPosition, SetPosition
-    Vec2f GetPosition() {return position;}
+    Vec2f GetPosition(bool _includeAnimatedProperties = true);
 
 
     ///\brief Returns the global position of this sprite.
     ///
-    /// For sprites in map layers this position matches the position.
+    /// For sprites in map layers this position matches their (local) position.
     /// For sprites in layers of a composed sprite this position is their local position converted to global map coordinate system.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
     ///
     /// \see GetPosition, GetFullPosition, GetFullGlobalPosition, SetPosition
-    Vec2f GetGlobalPosition();
-
-
-    ///\brief Returns the full position of this sprite.
-    ///
-    /// The full position is a sum of the position and the animationFrameOffset. It is the actual position where a sprite is drawn.
-    ///
-    /// \see GetPosition, GetGlobalPosition, GetFullGlobalPosition, SetPosition
-    Vec2f GetFullPosition() { return position + animationFrameOffset;}
-
-
-    ///\brief Returns the full world position of this sprite.
-    ///
-    /// The full world position is a sum of the position and the animationFrameOffset.
-    /// It is the actual position where a sprite is drawn.
-    ///
-    /// \see GetPosition, GetGlobalPosition, GetFullPosition, SetPosition
-    Vec2f GetFullGlobalPosition();
-
-
-    ///\brief Set the animation frame offset to the given **_frameOffset**.
-    ///
-    /// The animationFrameOffset is a possible offset of an image (frame) during a frame animation.
-    /// This function is usually called by a frame animation player.
-    ///\see GetAnimationFrameOffset
-    void SetAnimationFrameOffset(Vec2f _frameOffset);
-
-
-    ///\brief Returns the animationFrameOffset.
-    ///
-    /// \see SetAnimationFrameOffset
-    Vec2f GetAnimationFrameOffset() {return animationFrameOffset;}
+    Vec2f GetGlobalPosition(bool _includeAnimatedProperties = true);
 
 
     //------
+
 
     ///\brief Set the horizontal and vertical scale factor of this sprite to the given **_scale**.
     ///
@@ -333,19 +332,24 @@ public:
 
     ///\brief Returns the horizontal and vertical scale factor of this sprite.
     ///
-    /// For sprites inside the map layers this scale matches the global scale.
-    /// \see GetGlobalScale, SetScale
-    Vec2f GetScale() {return scale;}
-
-
-    ///\brief Returns the world scale factor of this sprite.
+    /// This is a local scale factor which is for sprites inside the map layers also a global scale factor.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
     ///
-    /// The world scale is the actual scale at which a sprite is drawn.
+    /// \see GetGlobalScale, SetScale
+    Vec2f GetScale(bool _includeAnimatedProperties = true);
+
+
+    ///\brief Returns the global scale factor of this sprite.
+    ///
+    /// For sprites in map layers this scale matches the (local) scale.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
     /// \see GetScale, SetScale
-    Vec2f GetGlobalScale();
+    Vec2f GetGlobalScale(bool _includeAnimatedProperties = true);
 
 
     //------
+
 
     ///\brief Set the rotation of this sprite to the given **_rotation**.
     ///
@@ -356,37 +360,49 @@ public:
 
     ///\brief Returns the rotation of this sprite in degrees.
     ///
-    /// For sprites inside the map layers this rotation matches the global rotation.
+    /// This is a local rotation which is for sprites inside the map layers also a global rotation.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
     /// \see GetGlobalRotation, SetRotation
-    float GetRotation() {return rotation;}
+    float GetRotation(bool _includeAnimatedProperties = true);
 
 
     ///\brief Returns the global rotation of this sprite.
     ///
-    /// The global rotation is the actual rotation at which a sprite is drawn.
+    /// For sprites in map layers this rotation matches the (local) rotation.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
     /// \see GetRotation, SetRotation
-    float GetGlobalRotation();
+    float GetGlobalRotation(bool _includeAnimatedProperties = true);
 
 
     //------
 
+
     ///\brief Set the horizontal and vertical flip factor of this sprite to the given **_flip**.
     ///
-    ///\see GetFlip
+    ///\see GetFlip, GetGlobalFlip
     void SetFlip(Vec2i _flip);
 
 
     ///\brief Returns the horizontal and vertical flip factor of this sprite.
     ///
     /// The flip value 1 means that a sprite is *flipped*, the value 0 means that it is not.
-    /// For sprites inside the map layers this flip matches the world flip.
-    Vec2i GetFlip() {return flip;}
+    /// This is a local flip factor which is for sprites inside the map layers also a global flip factor.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
+    /// \see GetGlobalFlip, SetFlip
+    Vec2i GetFlip(bool _includeAnimatedProperties = true);
 
 
     ///\brief Returns the horizontal and vertical world flip factor of this sprite.
     ///
-    /// The world flip is the actual flip at which a sprite is drawn.
-    Vec2i GetGlobalFlip();
+    /// The flip value 1 means that a sprite is *flipped*, the value 0 means that it is not.
+    /// For sprites in map layers this flip factor matches the (local) flip factor.
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
+    /// \see GetFlip, SetFlip
+    Vec2i GetGlobalFlip(bool _includeAnimatedProperties = true);
 
 
     //------
@@ -418,7 +434,15 @@ public:
     ///\brief Returns the alpha of this sprite.
     ///
     /// \see SetAlpha
-    float GetAlpha(){return alpha;}
+    //float GetAlpha(){return alpha;}
+
+
+    ///\brief Returns the alpha of this sprite.
+    ///
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
+    /// \see SetAlpha
+    float GetAlpha(bool _includeAnimatedProperties = true);
 
 
     //------
@@ -449,7 +473,8 @@ public:
     ///\brief Returns true if the overlay color of this sprite is active; otherwise returns false.
     ///
     ///\see SetColorOverlayActive, SetColorOverlayRGBA, SetColorOverlayBlend
-    bool IsOverlayColorActive(){return colorOverlayActive;}
+    bool IsOverlayColorActive();
+
 
 
     ///\brief Set the color overlay of this sprite to the given  **_colorOverlayRGBA**.
@@ -460,8 +485,10 @@ public:
 
     ///\brief Returns the overlay color of this sprite.
     ///
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
     ///\see SetColorOverlayRGBA,
-    ColorRGBA GetOverlayColorRGBA(){return colorOverlayRGBA;}
+    ColorRGBA GetOverlayColorRGBA(bool _includeAnimatedProperties = true);
 
 
     ///\brief Set the color overlay blend of this sprite to the given  **_colorOverlayBlend**.
@@ -473,8 +500,39 @@ public:
 
     ///\brief Returns the overlay color blend of this sprite.
     ///
+    /// If the given *_includeAnimatedProperties* is *true*, the animated properties are included in the returned value.
+    ///
     /// \see SetColorOverlayBlend
-    ColorOverlayBlend GetOverlayColorBlend(){return colorOverlayBlend;}
+    ColorOverlayBlend GetOverlayColorBlend(bool _includeAnimatedProperties = true);
+
+
+    //------ ANIMATED PROPERTIES
+
+
+    ///\brief Returns the pre-animation properties.
+    AnimatedProperties* GetAnimatedProperties(){ return ap; }
+
+
+    ///\brief Store current properties for animation purposes.
+    ///
+    /// This function is usually called from animation objects.
+    ///\see Collider
+    virtual void CreateAnimatedPropertiesIfNone();
+
+
+    ///\brief Set sprite properties to pre-animation state.
+    ///
+    /// This function is usually called from animation objects.
+    ///\see Collider
+    virtual void ResetAnimatedProperties();
+
+
+    ///\brief Set sprite properties from the given **_ap** object.
+    ///
+    /// This function is usually called from animation objects.
+    ///\see Collider
+    virtual void AppendAnimatedProperties(AnimatedProperties& _ap);
+
 
 
     //------ COLLIDER
@@ -563,6 +621,8 @@ private:
     ComposedSprite * parentComposedSprite = nullptr;        // LINK pointer to parent composed sprite if sprite is child of a composed sprite.
 
     //---
+    int id = 0;
+    std::string name;
     int tag = 0;
     void* linkObject = nullptr;
 
@@ -573,7 +633,7 @@ private:
 
     //--- TRANSFORMATION PROPERTIES
     Vec2f position;
-    Vec2f animationFrameOffset;
+    //Vec2f animationFrameOffset;
     Vec2f scale = Vec2f(1.0, 1.0);
     float rotation = 0.0;
     Vec2i flip;
@@ -588,6 +648,10 @@ private:
     bool colorOverlayActive = false;
     ColorRGBA colorOverlayRGBA = 0;
     ColorOverlayBlend colorOverlayBlend = ColorOverlayBlend::NORMAL;
+
+
+    //---
+    AnimatedProperties* ap = nullptr;
 
 
     //--- DATA
@@ -632,6 +696,7 @@ public:
     virtual bool RaycastHit(Vec2f _rayStart, Vec2f _rayEnd, Vec2f &_hitPos) override;
     virtual void UpdateBoundingBox() override;
     virtual void CaptureForLerpDrawing() override;
+    virtual void ResetAnimatedProperties() override;
 
 
     /// \brief Returns a position in the map system from the given *_pos* in the system of this composed sprite.
@@ -663,11 +728,22 @@ public:
     std::vector<Layer*> & GetLayers()  {return layers; }
 
 
+    void SetChildrenSpritesChanged(bool _childrenSpritesChanged)
+    {
+        childrenSpritesChanged = _childrenSpritesChanged;
+        if(GetParentComposedSprite()){
+            GetParentComposedSprite()->SetChildrenSpritesChanged(true);
+        }
+    }
+
+
     //----
     AffineMat3f GetCTransform(){ return cTransform; }
     Vec2i GetCFlip(){ return cFlip; }
     float GetCScale(){ return cScale; }
     float GetCRotation(){ return cRotation; }
+
+
 
 private:
     std::vector<Layer*>layers;                         // OWNED
@@ -683,9 +759,11 @@ private:
     Vec2i nTiles;
     Vec2i size;
 
-    void UpdateTransform();
-    static void CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest, JugiMapBinaryLoader *loader=nullptr);
+    bool childrenSpritesChanged = false;
 
+    void UpdateTransform();
+    //static void CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest, JugiMapBinaryLoader *loader=nullptr);
+    static void CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest, int &zOrder);
 };
 
 
@@ -761,6 +839,9 @@ public:
     ///
     /// This function can be used with engines which provides a physics simulation engine.
     virtual void SetPhysicsMode(PhysicsMode _physicsMode){ physicsMode = _physicsMode;}
+
+
+    virtual void AppendAnimatedProperties(AnimatedProperties& _ap) override;
 
 
 private:

@@ -21,17 +21,17 @@ void CameraController::Init(WorldMapCamera *_cameraView, jugimap::VectorShape *_
     ownCameraPath = _ownCameraPath;
 
     //----
-    cameraPath->CalculatePathLength();
+    //cameraPath->CalculatePathLength();
     float speed = 200;                                       // 50 pixels per second
     float duration = cameraPath->GetPathLength() / speed;
 
 
     //----
-    movingTween.Init(0.0, 1.0, duration, Easing::LINEAR);
+    movingTween.Init(0.0, 1.0, duration, Easing::Kind::LINEAR);
     movingTween.SetMode(Tween::Mode::LOOP);
     movingTween.Play();
 
-    zanyTween.Init(0.0, 1.0, 7, Easing::EASE_IN_OUT);
+    zanyTween.Init(0.0, 1.0, 7, Easing::Kind::EASE_START_END);
     zanyTween.SetMode(Tween::Mode::LOOP_REVERSE);
 
     Vec2f pos = cameraPath->GetPathPoint(0.0);   // start position
@@ -63,6 +63,8 @@ void CameraController::Update()
     float p = movingTween.GetValue();
     Vec2f pos = cameraPath->GetPathPoint(p);
     camera->SetPointedPosition(pos);
+    DbgOutput("CameraController::Update() p:" +std::to_string(p)+ "  pos x:"+std::to_string(pos.x)+ " y:"+std::to_string(pos.y));
+
     if(zany){
         float z = zanyTween.GetValue();
         float scale = 0.8 + (0.4*z);
@@ -126,6 +128,7 @@ VectorShape* MakeWorldCameraOverviewPath_v1(WorldMapCamera &_camera)
     shape->vertices.push_back(Vec2f(max.x, min.y));
     shape->vertices.push_back(Vec2f(min.x, max.y));
     shape->vertices.push_back(min);
+    shape->RebuildPath();
 
     VectorShape *cameraPath = new VectorShape(shape);
 
@@ -147,6 +150,7 @@ VectorShape* MakeWorldCameraOverviewPath_v2(WorldMapCamera &_camera)
     shape->vertices.push_back(max);
     shape->vertices.push_back(Vec2f(min.x, max.y));
     shape->vertices.push_back(min);
+    shape->RebuildPath();
 
     VectorShape *cameraPath = new VectorShape(shape);
 
@@ -168,6 +172,7 @@ VectorShape* MakeWorldCameraOverviewPath_v3(WorldMapCamera &_camera)
     shape->vertices.push_back(max);
     shape->vertices.push_back(min);
     shape->vertices.push_back(Vec2f(min.x, max.y));
+    shape->RebuildPath();
 
     VectorShape *cameraPath = new VectorShape(shape);
 

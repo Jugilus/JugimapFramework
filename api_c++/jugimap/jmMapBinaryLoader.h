@@ -20,9 +20,12 @@ class GraphicItem;
 class SourceSprite;
 class VectorShape;
 class FrameAnimation;
+class TimelineAnimation;
+class AnimationTrack;
 class Layer;
 class SpriteLayer;
 class VectorLayer;
+class Sprite;
 class ComposedSprite;
 class ObjectFactory;
 class BinaryStreamReader;
@@ -40,11 +43,11 @@ public:
     static std::string pathPrefix;                              ///<  An optional string attached to the *filePath* parameter in the loading functions. It must end with slash '/'!
     static std::string error;                                   ///<  Error message if loading fails.
     static std::vector<std::string> messages;                   ///<  Messages about skipped chunks of data during the loading.
-    static bool usePixelCoordinatesForTileLayerSprites; 		///<  Sprites on the editor's tile layers have positions stored in grid coordinates. If this parameter is *true*, the coordinates will be converted to pixel coordinates.
+    //static bool usePixelCoordinatesForTileLayerSprites; 		///<  Sprites on the editor's tile layers have positions stored in grid coordinates. If this parameter is *true*, the coordinates will be converted to pixel coordinates.
 
     static int zOrderCounterStart;                              ///<  Starting z-order for loaded layers (for engines which manages drawing order of sprites via z-order parameter).
     static int zOrderCounter;                                   ///<  Z-order counter for loaded layers.
-    static int zOrderCounterStep;                               ///<  Z-order counter step.
+    //static int zOrderCounterStep;                               ///<  Z-order counter step.
 
 
     /// Loads source data from a jugimap binary file (.jmb) at the given **_filePath** into an empty **_SourceGraphics**. Returns *true* if loading succeeds, otherwise returns *false*.
@@ -70,9 +73,12 @@ private:
     ComposedSprite *LoadComposedSpriteData(BinaryStreamReader &stream, int size);
     bool _LoadMap(BinaryStreamReader &stream, int size);
     jugimap::SpriteLayer *LoadLayer(BinaryStreamReader &stream, int size);
+    bool LoadSpriteData(BinaryStreamReader &stream, Sprite *s);
     jugimap::VectorLayer *LoadVectorLayer(BinaryStreamReader &stream, int size);
     jugimap::VectorShape *LoadVectorShape(BinaryStreamReader &stream, int size, bool vectorLayerShape=true);
     jugimap::FrameAnimation *LoadFrameAnimation(BinaryStreamReader &stream, int size, jugimap::SourceSprite *ss);
+    jugimap::TimelineAnimation *LoadTimelineAnimation(BinaryStreamReader &stream, int size, jugimap::SourceSprite *ss);
+    AnimationTrack *LoadAnimationTrack(BinaryStreamReader &stream, int size);
     bool LoadParameters(BinaryStreamReader &stream, std::vector<Parameter> &parameters);
     void LoadParallaxAndScreenLayerParameters(BinaryStreamReader &stream, Layer *layer);
     void InitCollisionShapes(GraphicItem *gi);
@@ -122,6 +128,7 @@ private:
         static const int OBJECTS_V2 = 701;
         static const int OBJECT = 710;
         static const int VECTOR_SHAPES = 750;
+        static const int VECTOR_SHAPES_V2 = 751;
         static const int VECTOR_SHAPE = 760;
         static const int VECTOR_SHAPE_CONTROL_POINTS = 770;
 
@@ -131,6 +138,24 @@ private:
         static const int FRAME_ANIMATIONS = 950;
         static const int FRAME_ANIMATION = 960;
         static const int ANIMATION_FRAMES = 970;
+
+
+        static const int TIMELINE_ANIMATIONS = 1000;
+        static const int TIMELINE_ANIMATION = 1010;
+        static const int ANIMATION_MEMBERS = 1020;
+        static const int ANIMATION_TRACK = 1030;
+        static const int ANIMATION_KEYS = 1040;
+        static const int AK_TRANSLATION = 1100;
+        static const int AK_ROTATION = 1110;
+        static const int AK_SCALING = 1120;
+        static const int AK_FLIP_HIDE = 1130;
+        static const int AK_ALPHA_CHANGE = 1140;
+        static const int AK_OVERLAY_COLOR_CHANGE = 1150;
+        static const int AK_PATH_MOVEMENT = 1160;
+        static const int AK_FRAME_CHANGE = 1170;
+        static const int AK_FRAME_ANIMATION = 1180;
+        static const int AK_TIMELINE_ANIMATION = 1190;
+        static const int AK_META_TRACK = 1250;
 
     };
 
@@ -215,7 +240,9 @@ private:
     {
         int kind = -1;                                  // JMVectorShape::RECTANGLE, JMVectorShape::POLYLINE, JMVectorShape::BEZIER_POLYCURVE or JMVectorShape::ELLIPSE
         bool closed = false;                            // closed polyline or bezier curve
-        int dataFlags = 0;                              // custom data integer
+        std::string name;                             // custom string
+        int id = 0;                                     // custom integer
+        int dataFlags = 0;                              // custom integer
         bool probe = false;                             // custom identifier
         std::vector<FVectorVertex>vertices;
         std::vector<Parameter> parameters;

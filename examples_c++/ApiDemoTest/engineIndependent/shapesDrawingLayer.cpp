@@ -121,7 +121,7 @@ Sprite * ShapesDrawingLayer::DrawSpriteCollisionShapes(Sprite *sprite, int &coun
         }
 
         // transform vector shapes to world positions of their sprites
-        AffineMat3f m = MakeTransformationMatrix(standardSprite->GetFullGlobalPosition(), sprite->GetGlobalScale(), sprite->GetGlobalFlip(), sprite->GetGlobalRotation(), Vec2f());
+        AffineMat3f m = MakeTransformationMatrix(standardSprite->GetGlobalPosition(), sprite->GetGlobalScale(), sprite->GetGlobalFlip(), sprite->GetGlobalRotation(), Vec2f());
         float scale = standardSprite->GetGlobalScale().x;
 
         for(VectorShape *vs : allShapes){

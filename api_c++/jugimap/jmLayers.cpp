@@ -218,7 +218,11 @@ SpriteLayer::~SpriteLayer()
 void SpriteLayer::InitEngineLayer()
 {
 
-    if(GetMap()==nullptr){          // For map layers this was already called.
+    if(GetName()=="glow"){
+        DummyFunction();
+    }
+
+    if(GetParentComposedSprite()){          // For map layers this was already called.
         InitLayerParameters();
     }
 

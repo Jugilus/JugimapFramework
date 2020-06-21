@@ -15,6 +15,8 @@ namespace jugimap {
 class Layer;
 class Sprite;
 class VectorShape;
+class FrameAnimation;
+class TimelineAnimation;
 
 
 /// \addtogroup SearchFunctions
@@ -43,6 +45,22 @@ Layer* FindLayerWithName(Map *map, const std::string &name, LayerKind layerKind=
 //--- COLLECT SPRITES
 
 
+/// \brief Collect sprites with the given id.
+///
+/// \param map The map where we collect the sprites.
+/// \param collectedSprites A reference to a vector where the collected sprites are stored.
+/// \param id The searched id.
+void CollectSpritesWithId(Map *map, std::vector<Sprite*>&collectedSprites,  int id);
+
+
+/// \brief Collect sprites with the given name.
+///
+/// \param map The map where we collect the sprites.
+/// \param collectedSprites A reference to a vector where the collected sprites are stored.
+/// \param name The searched name.
+void CollectSpritesWithName(Map *map, std::vector<Sprite*>&collectedSprites,  const std::string &name);
+
+
 /// \brief Collect sprites which contain the given parameter.
 ///
 /// \param map The map where we collect the sprites.
@@ -66,7 +84,23 @@ void CollectSpritesWithDataFlags(Map *map, std::vector<Sprite*>&collectedSprites
 /// \param map The map where we collect the sprites.
 /// \param collectedSprites A reference to a vector where the collected sprites are stored.
 /// \param name The searched name.
-void CollectSpritesWithName(Map *map, std::vector<Sprite*>&collectedSprites,  const std::string &name);
+void CollectSpritesWithSourceSpriteName(Map *map, std::vector<Sprite*>&collectedSprites,  const std::string &name);
+
+
+/// \brief Collect sprites with the given id.
+///
+/// \param layer The sprite layer where we collect the sprites.
+/// \param collectedSprites A reference to a vector where the collected sprites are stored.
+/// \param id The searched id.
+void CollectSpritesWithId(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  int id);
+
+
+/// \brief Collect sprites with the given name.
+///
+/// \param layer The sprite layer where we collect the sprites.
+/// \param collectedSprites A reference to a vector where the collected sprites are stored.
+/// \param name The searched name.
+void CollectSpritesWithName(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  const std::string &name);
 
 
 /// \brief Collect sprites which contain the given parameter.
@@ -92,10 +126,18 @@ void CollectSpritesWithDataFlags(SpriteLayer *layer, std::vector<Sprite*>&collec
 /// \param layer The sprite layer where we collect the sprites.
 /// \param collectedSprites A reference to a vector where the collected sprites are stored.
 /// \param name The searched name.
-void CollectSpritesWithName(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  const std::string &name);
+void CollectSpritesWithSourceSpriteName(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  const std::string &name);
 
 
 //--- FIND VECTOR SHAPE
+
+
+/// \brief Find a vector shape with the given *name*.
+///
+/// The function returns the first found vector shape; if none is found it returns nullptr.
+/// \param map The map where we search for the vector shape.
+/// \param name The searched name of the vector shape.
+VectorShape* FindVectorShapeWithName(Map *map, const std::string &name);
 
 
 /// \brief Find a vector shape with the given parameters.
@@ -121,6 +163,14 @@ VectorShape* FindVectorShapeWithParameter(Map *map, const std::string &pName, co
 VectorShape* FindVectorShapeWithProperties(Map *map, int probe, int dataFlags, bool compareDataFlagsAsBitmask, ShapeKind kind = ShapeKind::NOT_DEFINED);
 
 
+/// \brief Find a vector shape with the given *name*.
+///
+/// The function returns the searched vector shape if is found; if it is not found it returns nullptr.
+/// \param vectorLayer The vector layer where we search for the vector shape.
+/// \param name The searched name of the vector shape.
+VectorShape* FindVectorShapeWithName(VectorLayer * vectorLayer, const std::string &name);
+
+
 /// \brief Find a vector shape with the given parameters.
 ///
 /// The function returns the searched vector shape if is found; if it is not found it returns nullptr.
@@ -143,13 +193,20 @@ VectorShape* FindVectorShapeWithParameter(VectorLayer * vectorLayer, const std::
 VectorShape* FindVectorShapeWithProperties(VectorLayer * vectorLayer, int probe, int dataFlags, bool compareDataFlagsAsBitmask, ShapeKind kind = ShapeKind::NOT_DEFINED);
 
 
+/// \brief Find a vector shape with the given *name*.
+///
+/// The function returns the first found vector shape; if none is found it returns nullptr.
+/// \param vectorShapes A reference to stored vector shapes where we search for the vector shape.
+/// \param name The searched name of the vector shape.
+VectorShape* FindVectorShapeWithName(std::vector<VectorShape*>&vectorShapes, const std::string &name);
+
+
 /// \brief Find a vector shape with the given parameters.
 ///
 /// The function returns the first found vector shape; if none is found it returns nullptr.
 /// \param vectorShapes A reference to stored vector shapes where we search for the vector shape.
 /// \param pName The searched name of the parameter.
 /// \param pValue The searched value of the parameter. If it is not specified the function searches for the name only.
-/// /// \param pValue The searched value of the parameter. If the empty string *""* is given the function searches for the name only.
 /// \param kind The *kind* of the vector shape. Use ShapeKind::NOT_DEFINED to skip comparing by the *shape*.
 VectorShape* FindVectorShapeWithParameter(std::vector<VectorShape*>&vectorShapes, const std::string &pName, const std::string &pValue, ShapeKind kind = ShapeKind::NOT_DEFINED);
 
@@ -201,7 +258,7 @@ SourceSprite* FindSourceSpriteByGraphicFilePath(SourceGraphics *sourceGraphics, 
 
 /// \brief Find a frame animation with the given name.
 ///
-/// The function returns the searched frame animation if is found; if it is not found it returns nullptr.
+/// The function returns the searched frame animation if it is found; if it is not found it returns nullptr.
 /// \param standardSprite The standard sprite which we search for the frame animation.
 /// \param name The searched name of the frame animation.
 FrameAnimation* FindFrameAnimationWithName(StandardSprite * standardSprite, const std::string &name);
@@ -209,19 +266,57 @@ FrameAnimation* FindFrameAnimationWithName(StandardSprite * standardSprite, cons
 
 /// \brief Find a frame animation with the given name.
 ///
-/// The function returns the searched frame animation if is found; if it is not found it returns nullptr.
-/// \param frameAnimations A reference to stored frameAnimations where we search for the frame animation.
+/// The function returns the searched frame animation if it is found; if it is not found it returns nullptr.
+/// \param animations A reference to stored frameAnimations where we search for the frame animation.
 /// \param name The searched name of the frame animation.
-FrameAnimation* FindFrameAnimationWithName(std::vector<FrameAnimation*>&frameAnimations, const std::string &name);
+FrameAnimation* FindFrameAnimationWithName(std::vector<FrameAnimation*>&animations, const std::string &name);
 
 
 /// \brief Find a frame animation with the given parameter.
 ///
-/// The function returns the searched frame animation if is found; if it is not found it returns nullptr.
-/// \param frameAnimations A reference to stored frameAnimations where we search for the frame animation.
+/// The function returns the searched frame animation if it is found; if it is not found it returns nullptr.
+/// \param animations A reference to stored frameAnimations where we search for the frame animation.
 /// \param pName The searched name of the parameter.
 /// \param pValue The searched value of the parameter. If it is not specified the function searches for the name only.
-FrameAnimation* FindFrameAnimationWithParameter(std::vector<FrameAnimation *> &frameAnimations, const std::string &pName, const std::string &pValue="");
+FrameAnimation* FindFrameAnimationWithParameter(std::vector<FrameAnimation *> &animations, const std::string &pName, const std::string &pValue="");
+
+
+
+/// \brief Find a timeline animation with the given name.
+///
+/// The function returns the searched timeline animation if it is found; if it is not found it returns nullptr.
+/// \param standardSprite The standard sprite which we search for the timeline animation.
+/// \param name The searched name of the timeline animation.
+TimelineAnimation* FindTimelineAnimationWithName(StandardSprite * standardSprite, const std::string &name);
+
+
+/// \brief Find a frame animation with the given name.
+///
+/// The function returns the searched timeline animation if is found; if it is not found it returns nullptr.
+/// \param animations A reference to stored frameAnimations where we search for the timeline animation.
+/// \param name The searched name of the timeline animation.
+TimelineAnimation* FindTimelineAnimationWithName(std::vector<TimelineAnimation*>&animations, const std::string &name);
+
+
+/// \brief Find a timeline animation with the given parameter.
+///
+/// The function returns the searched timeline animation if is found; if it is not found it returns nullptr.
+/// \param animations A reference to stored frameAnimations where we search for the timeline animation.
+/// \param pName The searched name of the parameter.
+/// \param pValue The searched value of the parameter. If it is not specified the function searches for the name only.
+TimelineAnimation* FindTimelineAnimationWithParameter(std::vector<TimelineAnimation *> &animations, const std::string &pName, const std::string &pValue="");
+
+
+
+//---
+void GatherSpritesWithSetNameID(ComposedSprite *_composedSprite, std::vector<std::vector<Sprite*>>&spritesPerNameID);
+
+
+
+
+
+
+
 
 
 /// @}

@@ -2,7 +2,7 @@
 #define JUGIMAP_FRAME_ANIMATION_H
 
 #include <vector>
-#include "jmCommon.h"
+#include "jmAnimationCommon.h"
 
 
 
@@ -16,15 +16,6 @@ class StandardSprite;
 class JugiMapBinaryLoader;
 
 
-//Do not change content of this struct!
-struct AnimationFrame
-{
-    GraphicItem *image = nullptr;              // LINK
-    int duration = 100;                        // in milliseconds
-    Vec2f offset;
-    Vec2i flip;
-    int dataFlags = 0;
-};
 
 
 
@@ -32,231 +23,101 @@ struct AnimationFrame
 /// \brief Frame animation of standard sprites.
 ///
 /// The FrameAnimation class represents the sprite frame animation from JugiMap Editor.
-class FrameAnimation
+class  FrameAnimation : public Animation
 {
 public:
     friend class JugiMapBinaryLoader;
-    friend class FrameAnimationPlayer;
+
+
+    ~FrameAnimation() override;
+
+
+    std::vector<AnimationFrame*>&GetFrames(){ return frames; }
+
+private:
+    std::vector<AnimationFrame*>frames;                         // OWNED
+
+    FrameAnimation(SourceSprite* _sourceObject);
+    FrameAnimation(SourceSprite* _sourceObject, const std::string &_nameID);
+    FrameAnimation(const FrameAnimation &fa);
+    FrameAnimation& operator=(const FrameAnimation &fa);
+
+};
+
+
+
+//==================================================================================
+
+
+
+///\ingroup Animation
+///\brief A class for using frame animations in animation players.
+class FrameAnimationInstance : public AnimationInstance
+{
+public:
+    friend class EFrameAnimationPlayer;
+
 
     ///\brief Constructor.
-    FrameAnimation(){}
+    ///
+    /// Create an FrameAnimationInstance object for animating the given sprite *_sprite* with the given frame animation *_animation*.
+    FrameAnimationInstance(FrameAnimation *_animation, Sprite *_sprite);
 
 
-    ///\brief Copy constructor.
-    FrameAnimation(const FrameAnimation &fa);
-
-
-    ///\brief Assignment operator.
-    FrameAnimation& operator=(const FrameAnimation &fa);
+    ///\brief Constructor.
+    ///
+    /// Create an FrameAnimationInstance object for animating the given sprites *_sprites* with the given frame animation *_animation*.
+    /// The sprites must have the same SourceSprite!
+    FrameAnimationInstance(FrameAnimation *_animation, std::vector<Sprite*>&_sprites);
 
 
     ///\brief Destructor.
-    ~FrameAnimation();
+    ~FrameAnimationInstance() override;
 
 
-    ///\brief Returns the name of this frame animation.
-    std::string GetName(){return name;}
+    ///\brief Returns the assigned sprite; if a vector of sprites has been assigned it returns nullptr!
+    Sprite* GetSprite(){ return sprite;}
 
 
-    ///\brief Returns the source sprite *link* of this frame animation.
-    SourceSprite *GetSourceSprite(){return sourceSprite;}
+    ///\brief Returns a pointer to the vector of assigned sprites; if one sprite has been assigned it returns nullptr.
+    ///
+    /// The vector of assigned sprites object is owned by FrameAnimationInstance object! Sprites themselves are link pointers.
+    std::vector<Sprite*>* GetSprites(){ return sprites;}
 
 
-    ///\brief Returns a reference to the vector of stored parameters in this frame animation.
-    std::vector<jugimap::Parameter> &GetParameters(){return parameters;}
+    ///\brief Returns the starting index in the sequence of frames of this animation.
+    int GetStartingFrameIndex(){ return startingFrameIndex;}
 
 
-    ///\brief Returns the dataFlags factor of this frame animation.
-    int GetDataFlags(){return dataFlags;}
+    ///\brief Set the starting index in the sequence of frames of this animation to the given *_startingFrameIndex*.
+    void SetStartingFrameIndex(int _startingFrameIndex);
+
+
+    ///\brief Get a reference to the AnimatedProperties object of this animation instance.
+    AnimatedProperties &GetAnimatedProperties(){ return ap; }
+
+
+    int Update(int msTimePoint, int _flags) override;
+    void UpdateAnimatedSprites(bool _resetSpriteAnimatedProperties) override;
+    void ResetAnimatedProperties() override;
+    void OnPlayingStart() override;
+    void OnPlayingStop() override;
 
 
 
 private:
-    std::string name;
-    SourceSprite * sourceSprite = nullptr;                    // LINK to owner
-    std::vector<AnimationFrame*>frames;                       // OWNED
+    Sprite* sprite = nullptr;                                       // LINK
+    std::vector<Sprite*>*sprites = nullptr;                         // vector OWNED, sprites LINKS
 
-    int loopCount = 0;
-    bool loopForever = true;
-    float scaleDuration = 1.0;
-    bool repeatAnimation = false;
-    int repeat_PeriodStart = 0;
-    int repeat_PeriodEnd = 0;
-    bool startAtRepeatTime = true;
+    AnimatedProperties ap;
 
-    std::vector<jugimap::Parameter> parameters;
-    int dataFlags = 0;
-};
+    int startingFrameIndex = 0;
+    int activeFrameIndex = 0;
 
+    FrameAnimationInstance(const FrameAnimationInstance& _src) = delete ;
+    FrameAnimationInstance& operator=(const FrameAnimationInstance& _src) = delete;
 
-
-
-class FrameAnimationPlayer
-{
-public:
-    static const int stateIDLE = 0;
-    static const int statePLAYING = 1;
-    static const int statePAUSED = 2;
-    static const int stateLOOP_END = 3;
-    static const int stateWAITING_TO_REPEAT = 4;
-
-    //---
-    static const int flagFRAME_CHANGED = 1;
-
-
-    void SetFrameAnimation(FrameAnimation * _frameAnimation);
-    FrameAnimation* GetFrameAnimation(){return frameAnimation;}
-    AnimationFrame* GetActiveFrame(){return (frameAnimation!=nullptr)? frameAnimation->frames[indexCurrentFrame] : nullptr;}
-    int GetState(){return state;}
-
-    bool Play(FrameAnimation * _frameAnimation, int _indexFrame=0);
-    bool Play(int _indexFrame=0);
-    void Pause();
-    void Resume();
-    void Stop();
-    int Update();
-    void Reset();
-
-
-private:
-
-    FrameAnimation * frameAnimation = nullptr;    // LINK
-    int state = stateIDLE;
-    int indexCurrentFrame = 0;
-    int msFrameStartTime = -1;
-    int countLoop = 0;
-    int msRepeat = -1;
-    int stateStored = 0;
-    int msTimeStored = 0;
-
-    int GetRepeatTime(int _msCurrentTime);
-};
-
-
-//================================================================================================
-
-
-// Wrapper class for animating JMStandardSprite with FrameAnimationPlayer
-
-///\ingroup Animation
-/// \brief Frame animation player for sprites.
-///
-/// This class wraps the generic *FrameAnimationPlayer*.
-class SpriteFrameAnimationPlayer
-{
-public:
-
-
-    ///\brief Start playing the given *_frameAnimation* at frame *_indexFrame*.
-    ///
-    /// **Important:** The *_frameAnimation* must belong to the SourceSprite of the animated standard sprite!
-    /// The *_indexFrame* must be within the vector bounds of the played animation!
-    ///\see Stop
-    void Play(FrameAnimation *_frameAnimation, int _indexFrame=0)
-    {
-        frameAnimationPlayer.Play(_frameAnimation, _indexFrame);
-        OnChangedAnimationFrame();
-    }
-
-
-    ///\brief Update the played frame animation.
-    ///
-    /// This function must be called every game frame.
-    void Update()
-    {
-        if(frameAnimationPlayer.Update()==FrameAnimationPlayer::flagFRAME_CHANGED){
-            OnChangedAnimationFrame();
-        }
-    }
-
-
-    ///\brief Pause the played frame animation.
-    ///
-    /// \see Resume
-    void Pause(){frameAnimationPlayer.Pause();}
-
-
-    ///\brief Resume the paused frame animation.
-    ///
-    /// \see Pause
-    void Resume(){frameAnimationPlayer.Resume();}
-
-
-    ///\brief Stop the played frame animation.
-    ///
-    /// \see Play
-    void Stop(){frameAnimationPlayer.Stop();}
-
-
-    ///\brief Reset this player .
-    ///
-    /// This function will stop the frame animation and set the FrameAnimation object to nullptr.
-    void Reset(){frameAnimationPlayer.Reset();}
-
-
-protected:
-
-    virtual void OnChangedAnimationFrame() = 0;
-
-    FrameAnimationPlayer frameAnimationPlayer;
-};
-
-
-
-// Wrapper class for animating JMStandardSprite with FrameAnimationPlayer
-
-///\ingroup Animation
-/// \brief Frame animation player for standard sprites.
-///
-/// This class wraps the generic *FrameAnimationPlayer*.
-class StandardSpriteFrameAnimationPlayer : public SpriteFrameAnimationPlayer
-{
-public:
-
-    ///\brief Assign a standard sprite to be animated.
-    void SetSprite(Sprite  *_sprite){sprite = _sprite;}
-
-
-    ///\brief Returns the assigned sprite.
-    Sprite* GetSprite(){ return sprite; }
-
-
-protected:
-
-    virtual void OnChangedAnimationFrame() override;
-
-
-private:
-    Sprite  *sprite = nullptr;             // LINK pointer to animated sprite!
-
-
-};
-
-
-
-///\ingroup Animation
-/// \brief Frame animation player for animating more standard sprites with the same animation.
-///
-/// This class wraps the generic *FrameAnimationPlayer*.
-class SpritesFrameAnimationPlayer : public SpriteFrameAnimationPlayer
-{
-public:
-
-    ///\brief Assign sprites to be animated. All sprites must be standard sprites with the same SourceSprite!
-    void SetSprites(std::vector<Sprite*> _sprites) { sprites = _sprites; }
-
-
-    ///\brief Returns a reference to the vector of assigned sprites.
-    std::vector<Sprite*>& GetSprites(){ return sprites; }
-
-
-protected:
-
-    virtual void OnChangedAnimationFrame() override;
-
-
-private:
-    std::vector<Sprite*>sprites;             // LINK pointers to animated sprites - they should be sprites with the same source sprite!
+    void Update(AnimationFrame *_animationFrame);
 
 };
 

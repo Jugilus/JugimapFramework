@@ -14,7 +14,7 @@ class Drawer;
 bool IsPolygonConvex(std::vector<Vec2f> &vertices, bool &cw);
 bool SameGeometricShapes(std::vector<VectorShape *>&shapes1, std::vector<VectorShape *>&shapes2);
 bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2);
-void BezierPolycurveToPolyline(std::vector<BezierVertex>&bezierVertices,  std::vector<Vec2f>&vertices);
+//void BezierPolycurveToPolyline(std::vector<BezierVertex>&bezierVertices,  std::vector<Vec2f>&vertices);
 
 void MoveGeometricShape(GeometricShape * gs, Vec2f dPos);
 

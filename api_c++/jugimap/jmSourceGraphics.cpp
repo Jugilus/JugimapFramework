@@ -1,6 +1,7 @@
 #include "jmVectorShapes.h"
 #include "jmVectorShapesUtilities.h"
 #include "jmFrameAnimation.h"
+#include "jmTimelineAnimation.h"
 #include "jmSourceGraphics.h"
 
 
@@ -49,7 +50,12 @@ GraphicFile::~GraphicFile()
 
 SourceSprite::~SourceSprite()
 {
-    for(FrameAnimation* fa : frameAnimations) delete fa;
+    for(FrameAnimation* fa : frameAnimations){
+        delete fa;
+    }
+    for(TimelineAnimation* ta : timelineAnimations){
+        delete ta;
+    }
 
 }
 

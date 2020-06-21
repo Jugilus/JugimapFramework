@@ -24,12 +24,12 @@ void CameraController::Init(WorldMapCamera *_cameraView, jugimap::VectorShape *_
     ownCameraPath = _ownCameraPath;
 
     //----
-    cameraPath->CalculatePathLength();
+    //cameraPath->CalculatePathLength();
     float speed = 200;                                       // 50 pixels per second
     float duration = cameraPath->GetPathLength() / speed;
 
     //----
-    movingTween.Init(0.0, 1.0, duration, Easing::LINEAR);
+    movingTween.Init(0.0, 1.0, duration, Easing::Kind::LINEAR);
     movingTween.SetMode(Tween::Mode::LOOP);
     movingTween.Play();
 
@@ -91,6 +91,7 @@ VectorShape* MakeWorldCameraOverviewPath_v1(WorldMapCamera &_camera)
     shape->vertices.push_back(max);
     shape->vertices.push_back(min);
     shape->vertices.push_back(Vec2f(min.x, max.y));
+    shape->RebuildPath();
 
     VectorShape *cameraPath = new VectorShape(shape);
 
@@ -109,6 +110,10 @@ ParallaxScene::~ParallaxScene()
     if(worldSourceGraphics) delete worldSourceGraphics;
     if(backgroundSourceGraphics) delete backgroundSourceGraphics;
     if(testScreenMap) delete testScreenMap;
+
+    delete aniA;
+    delete aniB;
+    delete aniC;
 
 }
 
@@ -138,7 +143,6 @@ bool ParallaxScene::Init()
 
     worldMap = objectFactory->NewMap();
     worldMap->_SetZOrderStart(zOrderWorldMap);
-    JugiMapBinaryLoader::zOrderCounterStart = zOrderWorldMap;
     if(JugiMapBinaryLoader::LoadMap(worldMapFile, worldMap, worldSourceGraphics)==false){
         return false;
     }
@@ -152,7 +156,6 @@ bool ParallaxScene::Init()
 
     backgroundMap = objectFactory->NewMap();
     backgroundMap->_SetZOrderStart(zOrderBackgroundMap);
-    JugiMapBinaryLoader::zOrderCounterStart = zOrderBackgroundMap;
     if(JugiMapBinaryLoader::LoadMap(backgroundMapFile, backgroundMap, backgroundSourceGraphics)==false){
         return false;
     }
@@ -162,7 +165,6 @@ bool ParallaxScene::Init()
     if(includeTestScreenMap){
         testScreenMap = objectFactory->NewMap();
         testScreenMap->_SetZOrderStart(zOrderScreenMap);
-        JugiMapBinaryLoader::zOrderCounterStart = zOrderScreenMap;
         if(JugiMapBinaryLoader::LoadMap(testScreenMapFile, testScreenMap, backgroundSourceGraphics)==false){
             return false;
         }
@@ -212,27 +214,38 @@ bool ParallaxScene::Init()
 
 
     //------------------------------------------------------------------------------
-    // PREPARE ANIMATION PLAYERS FOR ANIMATED SPRITES
-    // (Animated sprites should usually be handled via entities which encapsulate players; the following hard coded solution is good enough for this simple demo)
+    // PREPARE ANIMATIONS - a simple method to animate that waterfall
     //-------------------------------------------------------------------------------
     std::vector<Sprite*>sprites;
-    CollectSpritesWithName(backgroundMap, sprites, "waterAniA");
+    CollectSpritesWithSourceSpriteName(backgroundMap, sprites, "waterAniA");
     assert(sprites.empty()==false);
     assert(sprites.front()->GetSourceSprite()->GetFrameAnimations().empty()==false);
-    aniPlayerA.SetSprites(sprites);
+    if(sprites.size()==1){
+        aniA = new FrameAnimationInstance(sprites.front()->GetSourceSprite()->GetFrameAnimations().front(), sprites.front());
+    }else{
+        aniA = new FrameAnimationInstance(sprites.front()->GetSourceSprite()->GetFrameAnimations().front(), sprites);
+    }
+
 
     sprites.clear();
-    CollectSpritesWithName(backgroundMap, sprites, "waterAniB");
+    CollectSpritesWithSourceSpriteName(backgroundMap, sprites, "waterAniB");
     assert(sprites.size()==1);
     assert(sprites.front()->GetSourceSprite()->GetFrameAnimations().empty()==false);
-    aniPlayerB.SetSprite(sprites.front());
+    if(sprites.size()==1){
+        aniB = new FrameAnimationInstance(sprites.front()->GetSourceSprite()->GetFrameAnimations().front(), sprites.front());
+    }else{
+        aniB = new FrameAnimationInstance(sprites.front()->GetSourceSprite()->GetFrameAnimations().front(), sprites);
+    }
 
     sprites.clear();
-    CollectSpritesWithName(backgroundMap, sprites, "waterAniC");
+    CollectSpritesWithSourceSpriteName(backgroundMap, sprites, "waterAniC");
     assert(sprites.size()==1);
     assert(sprites.front()->GetSourceSprite()->GetFrameAnimations().empty()==false);
-    aniPlayerC.SetSprite(sprites.front());
-
+    if(sprites.size()==1){
+        aniC = new FrameAnimationInstance(sprites.front()->GetSourceSprite()->GetFrameAnimations().front(), sprites.front());
+    }else{
+        aniC = new FrameAnimationInstance(sprites.front()->GetSourceSprite()->GetFrameAnimations().front(), sprites);
+    }
 
     SetInitialized(true);
 
@@ -244,9 +257,16 @@ bool ParallaxScene::Init()
 void ParallaxScene::Start()
 {
     cameraController.Start();
-    aniPlayerA.Play(aniPlayerA.GetSprites().front()->GetSourceSprite()->GetFrameAnimations().front());
-    aniPlayerB.Play(aniPlayerB.GetSprite()->GetSourceSprite()->GetFrameAnimations().front());
-    aniPlayerC.Play(aniPlayerC.GetSprite()->GetSourceSprite()->GetFrameAnimations().front());
+
+    if(aniPlayerA.Play(aniA) & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniA->UpdateAnimatedSprites(true);
+    }
+    if(aniPlayerB.Play(aniB) & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniB->UpdateAnimatedSprites(true);
+    }
+    if(aniPlayerC.Play(aniC) & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniC->UpdateAnimatedSprites(true);
+    }
 }
 
 
@@ -263,9 +283,18 @@ void ParallaxScene::Update()
         cameraController.SetPaused(!cameraController.IsPaused());
     }
 
-    aniPlayerA.Update();
-    aniPlayerB.Update();
-    aniPlayerC.Update();
+
+    if(aniPlayerA.Update() & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniA->UpdateAnimatedSprites(true);
+    }
+    if(aniPlayerB.Update() & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniB->UpdateAnimatedSprites(true);
+    }
+    if(aniPlayerC.Update() & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniC->UpdateAnimatedSprites(true);
+    }
+
+
     cameraController.Update();
 
 

@@ -6,10 +6,12 @@
 
 
 
-ncine::IAppEventHandler *createAppEventHandler()
+
+nctl::UniquePtr<ncine::IAppEventHandler> createAppEventHandler()
 {
-    return new MyEventHandler;
+    return nctl::UniquePtr<ncine::IAppEventHandler>(new MyEventHandler);
 }
+
 
 //==========================================================================================
 
@@ -60,10 +62,9 @@ void MyEventHandler::onInit()
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(ncine::theApplication().widthInt(), ncine::theApplication().heightInt()));
     jugimap::settings.SetYCoordinateUp(true);
+    jugimap::settings.SetZOrderStep(10);
     jugimap::objectFactory = new jugimap::ObjectFactoryNC();        // All map elements are created via 'objectFactory'.
     jugimap::sceneManager = new jugimap::SceneManager();
-
-    jugimap::deleteNCNodesSpecial = true;                           // otherwise it crashes in QCreator in debug mode
 
     //---------------------------------------------------
 

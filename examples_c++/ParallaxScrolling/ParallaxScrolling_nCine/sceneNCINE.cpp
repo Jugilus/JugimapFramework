@@ -16,8 +16,7 @@
 ParallaxSceneNC::~ParallaxSceneNC()
 {
     if(ncNode){
-        //delete ncNode;
-        jugimap::DeleteNCNode(ncNode);
+        delete ncNode;
     }
 }
 

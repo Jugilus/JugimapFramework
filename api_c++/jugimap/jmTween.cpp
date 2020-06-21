@@ -8,28 +8,6 @@ namespace jugimap {
 
 
 
-
-float Easing::GetValue(float p){
-
-    switch (kind)
-    {
-    case LINEAR:
-        return p;
-
-    case EASE_IN:
-        return p*p;
-
-    case EASE_OUT:
-        return  1.0-(1.0-p)*(1.0-p);
-
-    case EASE_IN_OUT:
-        return p < 0.5 ? 2*p*p : 1.0 - (2.0-2.0*p)*(2.0-2.0*p)/2.0;
-    }
-
-    return p;
-}
-
-
 //==============================================================================
 
 
@@ -39,10 +17,10 @@ Tween::~Tween()
 }
 
 
-void Tween::Init(float _valueStart, float _valueEnd, float _durationS, int _easingKind)
+void Tween::Init(float _valueStart, float _valueEnd, float _durationS, Easing::Kind _easingKind)
 {
     if(state==stateNEVER_INITIALIZED){
-        Tweens::tweensVector.push_back(this);
+        Tweens::vTweens.push_back(this);
     }
     valueStart = _valueStart;
     valueEnd = _valueEnd;
@@ -99,9 +77,9 @@ float Tween::Update()
 
         float p = (time.GetPassedNetTimeMS()-timeStartMS)/float(timeEndMS-timeStartMS);
 
-        if(p>1.0){
+        if(p>1.0f){
 
-            p = 0.0;
+            p = 0.0f;
 
             if(mode==Mode::LOOP){
                 timeStartMS = time.GetPassedNetTimeMS();
@@ -123,11 +101,11 @@ float Tween::Update()
         }
 
         if(reverse){
-            p = 1.0 - p;
+            p = 1.0f - p;
         }
 
         if(mode==Mode::REVERSE){
-            p = 1.0 - p;
+            p = 1.0f - p;
         }
 
         p = easing.GetValue(p);
@@ -141,12 +119,12 @@ float Tween::Update()
 
 //==============================================================================
 
-std::vector<Tween*> Tweens::tweensVector;
+std::vector<Tween*> Tweens::vTweens;
 
 
 void Tweens::Update()
 {
-    for(Tween *t : tweensVector){
+    for(Tween *t : vTweens){
         t->Update();
     }
 }
@@ -154,11 +132,11 @@ void Tweens::Update()
 
 void Tweens::RemoveTween(Tween * _tween)
 {
-    if(tweensVector.empty()) return;
+    if(vTweens.empty()) return;
 
-    for(int i = int(tweensVector.size())-1; i>=0; i-- ){
-        if(tweensVector[i]==_tween){
-            tweensVector.erase(tweensVector.begin()+i);
+    for(int i = int(vTweens.size())-1; i>=0; i-- ){
+        if(vTweens[i]==_tween){
+            vTweens.erase(vTweens.begin()+i);
         }
     }
 }

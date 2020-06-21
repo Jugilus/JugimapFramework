@@ -23,7 +23,23 @@ public:
     friend class ERollingStone;
     friend class EMovingPlatform;
 
+    Entity(){}
+    Entity(const Entity &_src)
+    {
+        active = _src.active;
+    }
+
+    Entity& operator=(const Entity &_src)
+    {
+        if(this == &_src) return *this;
+
+        active = _src.active;
+
+        return *this;
+    }
+
     virtual ~Entity(){}
+
     virtual bool Init(jugimap::Sprite *_sprite) = 0;
     virtual void Start() = 0;
     virtual void Update() = 0;
@@ -74,9 +90,10 @@ public:
     void SetPaused(bool _paused) override;
 
 private:
-    jugimap::StandardSprite  *sprite = nullptr;         // LINK to controlled sprite
-    jugimap::FrameAnimation *frameAnimation = nullptr;
-    jugimap::StandardSpriteFrameAnimationPlayer animationPlayer;
+    jugimap::StandardSprite  *sprite = nullptr;                     // LINK to controlled sprite
+    jugimap::FrameAnimationInstance *aniDefault = nullptr;              // LINK
+    //jugimap::FrameAnimationInstance *aniDefault = nullptr;        // OWNED
+    jugimap::AnimationPlayer animationPlayer;
 
 };
 
@@ -85,9 +102,14 @@ private:
 class EWalkingFella : public Entity
 {
 public:
-    static std::vector<EWalkingFella>templateFellas;
+    static std::vector<EWalkingFella*>templateFellas;
     static std::vector<EWalkingFella*>deactivatedFellas;      // LINKs to deactivated entities
 
+
+    //EWalkingFella(const EWalkingFella &_src);
+    //EWalkingFella& operator=(const EWalkingFella &_src);
+
+    ~EWalkingFella();
 
     bool Init(jugimap::Sprite *_sprite) override;
     void Start() override;
@@ -95,6 +117,8 @@ public:
     void SetPaused(bool _paused) override;
     void Deactivate() override;
     void OnDeleteFromScene() override;
+
+    void CopyPropertiesFrom(EWalkingFella* _src);
     void CopyToTemplates();
     void Spawn();
     jugimap::StandardSprite  *GetControlledSprite(){return sprite;}
@@ -108,12 +132,13 @@ private:
     float speed = 0.0;                                      // pixels per second
     int msTimerStart = -1;
     int msWaitTime = 0;
-    jugimap::FrameAnimation *faStandLeft = nullptr;          // LINK
-    jugimap::FrameAnimation *faStandRight = nullptr;          // LINK
-    jugimap::FrameAnimation *faWalkLeft = nullptr;          // LINK
-    jugimap::FrameAnimation *faWalkRight = nullptr;          // LINK
+    jugimap::FrameAnimationInstance *aniStandLeft = nullptr;            // OWNED
+    jugimap::FrameAnimationInstance *aniStandRight = nullptr;           // OWNED
+    jugimap::FrameAnimationInstance *aniWalkLeft = nullptr;             // OWNED
+    jugimap::FrameAnimationInstance *aniWalkRight = nullptr;            // OWNED
+    jugimap::FrameAnimationInstance *aniActive = nullptr;               // LINK
 
-    jugimap::StandardSpriteFrameAnimationPlayer frameAnimationPlayer;
+    jugimap::AnimationPlayer animationPlayer;
 
 
     //--- controlling variables

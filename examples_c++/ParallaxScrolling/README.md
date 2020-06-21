@@ -2,9 +2,9 @@
 
 ## About
 
-Parallax Scrolling is an application which utilizes parallax map features of JugiMap API.
+Parallax Scrolling is a demo application which utilizes parallax map features of JugiMap API.
 
-For more information, editor map files and a web version go here: https://jugilus.github.io/Jugimap-ParallaxScrolling/JugimapParallaxScrolling.html
+For more information, editor map files and to see a web version go here: https://jugilus.github.io/Jugimap-ParallaxScrolling/JugimapParallaxScrolling.html
 
 
 ## Setting up the engine project

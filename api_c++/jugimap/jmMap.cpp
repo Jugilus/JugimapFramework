@@ -1049,14 +1049,14 @@ void Map::CaptureForLerpDrawing()
 }
 
 
-int Map::GetNextZOrder(int _zOrderStep)
+int Map::GetNextZOrder()
 {
 
     int zOrder = zOrderStart;
 
     for(Layer* l : layers){
         if(l->GetKind()==LayerKind::VECTOR) continue;
-        zOrder = l->GetZOrder()  +  _zOrderStep;
+        zOrder = l->GetZOrder()  +  settings.GetZOrderStep();
     }
 
     return zOrder;

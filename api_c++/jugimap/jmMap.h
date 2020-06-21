@@ -175,7 +175,7 @@ public:
 
 
     ///\brief Returns the next z-order to be used with a next (manually) added layer to the map.
-    int GetNextZOrder(int _zOrderStep);
+    int GetNextZOrder();
 
 
 

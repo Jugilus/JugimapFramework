@@ -58,5 +58,39 @@ float Parameter::FloatValue(const std::vector<Parameter> &parameters, const std:
 
 
 
+//=============================================================================================
+
+
+
+float Easing::GetValue(float p)
+{
+
+    switch (kind)
+    {
+    case Kind::LINEAR:
+        return p;
+
+    case Kind::EASE_START:
+        return p*p;
+
+    case Kind::EASE_END:
+        return  1.0-(1.0-p)*(1.0-p);
+
+    case Kind::EASE_START_END:
+        return p < 0.5 ? 2*p*p : 1.0 - (2.0-2.0*p)*(2.0-2.0*p)/2.0;
+
+    case Kind::CONSTANT:
+        return 0;
+    }
+
+    return p;
+}
+
+
+
+
+
+
+
 
 }

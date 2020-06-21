@@ -20,7 +20,12 @@ namespace jugimap {
 /// @{
 
 
-const double pi = 3.14159265358979323846;
+//const double pi = 3.14159265358979323846;
+
+
+const double mathPI = 3.14159265;
+
+
 
 
 /// \brief Print ASCII text in IDE output window - MS Windows only.
@@ -45,6 +50,7 @@ inline int Sgn(T val) {
 
 /// \brief Returns a random float number between (and including) the given **fMin** and **fMax**.
 double fRand(double fMin, double fMax);
+
 
 /// \brief Returns a random integer number between (and including) the given **iMin** and **iMax**.
 int iRand(int iMin, int iMax);
@@ -71,7 +77,6 @@ std::string ExtractNameFromPath(std::string path);
 inline void DummyFunction()
 {
 }
-
 
 
 
@@ -131,6 +136,104 @@ AffineMat3f MakeTransformationMatrix(Vec2f pos, Vec2f scale, Vec2i flip, float r
 /// Returns a Rectf bounding of the given rectangle **rect** transformed by **matrix**.
 Rectf TransformRectf(const Rectf &rect, const AffineMat3f &matrix);
 
+
+
+//-----
+
+
+template<typename T>
+inline double DistanceTwoPoints(const T& P1, const T& P2)
+{
+    return std::sqrt((P2.x-P1.x)*(P2.x-P1.x) + (P2.y-P1.y)*(P2.y-P1.y));
+}
+
+
+inline double DistanceTwoPoints(double x1, double y1, double x2, double y2)
+{
+    return std::sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+}
+
+
+template<typename T>
+inline double SquareDistanceTwoPoints(const T& P1, const T& P2)
+{
+    return (P1.x - P2.x)*(P1.x - P2.x) + (P1.y - P2.y)*(P1.y - P2.y);
+}
+
+
+template<typename T>
+inline double distToSegment(const T& P, const T& P1, const T& P2)
+{
+
+  double l2 = SquareDistanceTwoPoints(P1, P2);
+  if (l2 == 0) return std::sqrt(SquareDistanceTwoPoints(P, P1));
+  double t = ((P.x - P1.x) * (P2.x - P1.x) + (P.y - P1.y) * (P2.y - P1.y)) / l2;
+  if (t < 0){
+      return std::sqrt(SquareDistanceTwoPoints(P, P1));
+  }
+  if (t > 1){
+      return std::sqrt(SquareDistanceTwoPoints(P, P2));
+  }
+  T ProjectedPoint(P1.x +  t* ( P2.x - P1.x ), P1.y +  t* ( P2.y - P1.y ) );
+  return std::sqrt(SquareDistanceTwoPoints(P, ProjectedPoint));
+
+}
+
+
+template<typename T>
+inline double AngleBetweenTwoPoints(const T& P1, const T& P2)
+{
+    return std::atan2(P2.y-P1.y, P2.x-P1.x) * 180.0/mathPI;
+}
+
+
+//-----
+
+
+template<typename T>
+int GetIndexOfVectorElement(std::vector<T*>&v, T* element)
+{
+    int index = -1;
+
+    if(v.empty()==false){
+        for(int i=0; i<v.size(); i++){
+            if(v[i]==element){
+                index = i;
+            }
+        }
+    }
+
+    return index;
+}
+
+
+template<typename T>
+bool RemoveElementFromVector(std::vector<T*>&v, T* element)
+{
+
+    for(int i = int(v.size())-1; i>=0; i-- ){
+        if( v[i]==element ){
+            v.erase(v.begin()+i);
+            return true;
+        }
+    }
+
+    return false;
+
+}
+
+
+template<typename T>
+bool AddElementToVectorIfNotIn(std::vector<T*>&v, T* element)
+{
+
+    if(std::find(v.begin(), v.end(), element) == v.end()) {
+        v.push_back(element);
+        return true;
+    }
+
+    return false;
+}
 
 
 

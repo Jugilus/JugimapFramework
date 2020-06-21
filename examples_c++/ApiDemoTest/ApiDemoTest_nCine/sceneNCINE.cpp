@@ -19,8 +19,7 @@ namespace jm = jugimap;
 PlatformerSceneNC::~PlatformerSceneNC()
 {
     if(ncNode){
-        //delete ncNode;
-        jm::DeleteNCNode(ncNode);
+        delete ncNode;
     }
 }
 
@@ -64,7 +63,8 @@ bool PlatformerSceneNC::Init()
     extraLabelsCount = 5;
 
     // Skip buttons for features not supported by the engine.
-    skippedButtons = std::vector<int>{ButtonTag::SHOW_COLLISION_SHAPES, ButtonTag::SHOW_VECTOR_SHAPES, ButtonTag::DOUBLE_CAMERA,ButtonTag::DYNAMIC_CRYSTALS};
+    //skippedButtons = std::vector<int>{ButtonTag::SHOW_COLLISION_SHAPES, ButtonTag::SHOW_VECTOR_SHAPES, ButtonTag::DOUBLE_CAMERA,ButtonTag::DYNAMIC_CRYSTALS};
+    skippedButtons = std::vector<int>{ButtonTag::DOUBLE_CAMERA, ButtonTag::DYNAMIC_CRYSTALS};
 
     MakeButtonsAndTexts();
 
@@ -128,6 +128,9 @@ void PlatformerSceneNC::UpdateTexts()
     if(fpsString != labels[4]->GetTextString()) labels[4]->SetTextString(fpsString);
 
 }
+
+
+
 
 
 }

@@ -15,6 +15,21 @@ class JugiMapBinaryLoader;
 
 
 
+
+struct TShapePoint : public Vec2f
+{
+    float distance = 0.0;
+    float angle = 0.0;
+    bool smoothCorner = false;
+
+    TShapePoint():Vec2f(){}
+    TShapePoint(Vec2f _p): Vec2f(_p){}
+    TShapePoint(Vec2f _p, float _distance) : Vec2f(_p), distance(_distance) {}
+    TShapePoint(Vec2f _p, float _distance, bool _smoothCorner) : Vec2f(_p), distance(_distance), smoothCorner(_smoothCorner){}
+};
+
+
+
 ///\ingroup MapElements
 ///\brief The base class for geometric shapes.
 ///
@@ -22,6 +37,9 @@ class JugiMapBinaryLoader;
 /// for standalone objects used in collision functions.
 struct GeometricShape
 {
+
+    friend class JugiMapBinaryLoader;
+
 
     virtual ~GeometricShape(){}
 
@@ -45,22 +63,58 @@ struct GeometricShape
     virtual bool IsValid()  = 0;
 
 
-    ///\brief Calculate and returns the length of this shape.
+    ///\brief Returns *true* if this shape is a closed geometric object; otherwise returns false.
     ///
-    /// This function is usually called from the VectorShape::CalculatePathLength.
-    virtual float CalculatePathLength() = 0;
+    /// This function is usually called from the VectorShape::IsClosed.
+    bool IsClosed(){ return closed; }
 
 
-    ///\brief Returns a point along the path at the given parametric position *r*.
+    /// Set the *closed* parameter when you create a geometric shape by hand. Do not change it for existing shapes!
+    void _SetClosed(bool _closed) { closed = _closed; }
+
+
+    ///\brief Returns a reference to the path vector of this geometric shape.
+    ///
+    ///  This function is usually called from the VectorShape::GetPath.
+    std::vector<TShapePoint>& GetPath(){ return path; }
+
+
+    ///\brief Rebuild the path from the current shape geometry.
+    ///
+    ///  This function is usually called from the VectorShape::RebuildPath.
+    virtual void RebuildPath() = 0;
+
+
+    ///\brief Returns the length of the path.
+    ///
+    /// This function is usually called from the VectorShape::GetPathLength.
+    float GetPathLength(){ return pathLength; }
+
+
+    ///\brief Returns a point along the path at the given parametric position *p*.
     ///
     /// This function is usually called from the VectorShape::GetPathPoint.
-    /// \param r A parameter in the range of [0.0 - 1.0] where 0.0 gives the starting point and 1.0 gives the end point of the path.
-    /// \param pathLength The length of path calculated via CalculatePathLength.
-    virtual Vec2f GetPathPoint(float r, float pathLength) = 0;        //parametric function which takes 'r' from 0.0 - 1.0 and return a 2d vector position on path (0.0 = start point, 1.0 = end point)
+    /// \param p A parameter in the range of [0.0 - 1.0] where 0.0 gives the starting point and 1.0 gives the end point of the path.
+    virtual Vec2f GetPathPoint(float p);
+
+
+    ///\brief Returns a point along the path at the given parametric position *p*.
+    ///
+    /// This function is usually called from the VectorShape::GetPathPoint.
+    /// \param p A parameter in the range of [0.0 - 1.0] where 0.0 gives the starting point and 1.0 gives the end point of the path.
+    /// \param directionAngle The direction angle of the path at the returned point.
+    virtual Vec2f GetPathPoint(float p, float &directionAngle);
+
+
 
 
 protected:
     ShapeKind kind = ShapeKind::NOT_DEFINED;
+
+    std::vector<TShapePoint>path;
+    float pathLength = 0.0f;
+    bool closed = false;
+
 };
 
 
@@ -71,7 +125,6 @@ struct PolyLineShape : public GeometricShape
 {
 
     std::vector<Vec2f>vertices;     // closed curves have added extra point at the end as duplicate of the first point
-    bool closed = false;
     bool convex = true;
     bool rectangle = false;
     Vec2f boundingBoxMin;
@@ -80,8 +133,7 @@ struct PolyLineShape : public GeometricShape
 
     PolyLineShape(){ kind = ShapeKind::POLYLINE; }
     bool IsValid() override { return  !vertices.empty(); }
-    float CalculatePathLength() override;
-    Vec2f GetPathPoint(float r, float pathLength) override;
+    void RebuildPath() override;
 
     void UpdateBoundingBox();
 };
@@ -102,14 +154,15 @@ struct BezierVertex
 struct BezierShape : public GeometricShape
 {
     std::vector<BezierVertex>vertices;
-    bool closed = false;
-    std::vector<Vec2f>polylineVertices;      // bezier curve as polycurve
-
+    float toPolyThreshold = 1.0f;
 
     BezierShape(){ kind = ShapeKind::BEZIER_POLYCURVE; }
     bool IsValid() override { return  !vertices.empty(); }
-    float CalculatePathLength() override;
-    Vec2f GetPathPoint(float r, float pathLength) override;
+    void RebuildPath() override;
+
+private:
+
+    void _GetShapePointsFromBezierSegment(std::vector<TShapePoint> &path, Vec2f BP1, Vec2f BP2, Vec2f BP3, Vec2f BP4, int i);
 
 };
 
@@ -123,10 +176,9 @@ struct EllipseShape : public GeometricShape
     float b = 0;
 
 
-    EllipseShape(){ kind = ShapeKind::ELLIPSE; }
+    EllipseShape(){ kind = ShapeKind::ELLIPSE;  closed = true; }
     bool IsValid() override {return  a>0 && b>0;}
-    float CalculatePathLength() override;
-    Vec2f GetPathPoint(float r, float pathLength) override;
+    void RebuildPath() override;
 };
 
 
@@ -136,11 +188,14 @@ struct SinglePointShape : public GeometricShape
 {
     Vec2f point;
 
-
     SinglePointShape(){ kind = ShapeKind::SINGLE_POINT; }
     bool IsValid() override { return true;}
-    float CalculatePathLength() override {return 0;}
-    Vec2f GetPathPoint(float r, float pathLength) override {return Vec2f(point.x, point.y);}
+    void RebuildPath() override;
+
+
+    Vec2f GetPathPoint(float p) override { return point;}
+    Vec2f GetPathPoint(float p, float &directionAngle) override { return point;}
+
 };
 
 
@@ -177,6 +232,9 @@ public:
     ~VectorShape(){if(shape) delete shape;}
 
 
+    std::string GetName(){ return name; }
+
+
     ///\brief Returns the geometric shape of this vector shape.
     GeometricShape * GetGeometricShape() {return shape;}
 
@@ -201,23 +259,35 @@ public:
     std::vector<jugimap::Parameter>& GetParameters() {return parameters;}
 
 
-    ///\brief Calculate and returns the length of this vector shape.
-    float CalculatePathLength(){pathLength = shape->CalculatePathLength(); return pathLength;}
+    void RebuildPath(){ shape->RebuildPath(); }
 
 
     ///\brief Returns the length of this vector shape.
-    float GetPathLength() { return pathLength;}
+    float GetPathLength() { return shape->GetPathLength();}
 
 
     ///\brief Returns a point along the path at the given parametric position *r*.
-    Vec2f GetPathPoint(float r) {return shape->GetPathPoint(r,pathLength);}
+    Vec2f GetPathPoint(float r) { return shape->GetPathPoint(r); }
+
+
+    ///\brief Returns a point along the path at the given parametric position *r*.
+    Vec2f GetPathPoint(float r, float &directionAngle) { return shape->GetPathPoint(r,directionAngle); }
+
+
+    std::vector<TShapePoint>& GetPath(){ return shape->GetPath(); }
 
 
     ///\brief Returns *true* if this vector shape has a geometric object which is valid; otherwise returns false.
     bool IsValid() {return shape->IsValid();}
 
-private:
 
+    ///\brief Returns *true* if this vector shape has a geometric object which is closed; otherwise returns false.
+    bool IsClosed() {return shape->IsClosed();}
+
+
+private:
+    std::string name;
+    int id = 0;
     GeometricShape * shape = nullptr;                   // OWNED
     bool probe = false;                                 // custom identifier
     int dataFlags = 0;                                  // custom data

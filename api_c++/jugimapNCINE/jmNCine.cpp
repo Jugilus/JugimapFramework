@@ -131,7 +131,7 @@ void StandardSpriteNC::UpdateEngineSprite()
 
     if(flags & Property::TRANSFORMATION){
 
-        Vec2f posWorld = GetFullGlobalPosition();
+        Vec2f posWorld = GetGlobalPosition();
         posWorld += GetLayer()->GetParallaxOffset();
 
         Vec2f scaleWorld = GetGlobalScale();
@@ -232,7 +232,9 @@ void SpriteLayerNC::RemoveAndDeleteSprite(Sprite* _sprite)
 
     if(_sprite->GetKind()==SpriteKind::STANDARD){
         //static_cast<MapNC*>(GetMap())->GetMapNCNode()->removeChildNode(static_cast<StandardSpriteNC*>(_sprite)->GetNCSprite());
-        DeleteNCNode(static_cast<StandardSpriteNC*>(_sprite)->GetNCSprite());
+        //DeleteNCNode(static_cast<StandardSpriteNC*>(_sprite)->GetNCSprite());
+
+        delete static_cast<StandardSpriteNC*>(_sprite)->GetNCSprite();
 
     }else if(_sprite->GetKind()==SpriteKind::COMPOSED){
 
@@ -328,9 +330,108 @@ void TextNC::UpdateEngineText()
 void TextLayerNC::RemoveAndDeleteText(Text* _text)
 {
 
-    DeleteNCNode(static_cast<TextNC*>(_text)->GetNCTextNode());
+    //DeleteNCNode(static_cast<TextNC*>(_text)->GetNCTextNode());
+
+    delete static_cast<TextNC*>(_text)->GetNCTextNode();
 
     TextLayer::RemoveAndDeleteText(_text);
+
+}
+
+
+//===================================================================================================
+
+
+void DrawerNC::InitEngineDrawer()
+{
+
+
+}
+
+
+void DrawerNC::UpdateEngineDrawer()
+{
+
+    //Camera *cam = GetDrawingLayer()->GetMap()->GetCamera();
+    //ImGui::SetNextWindowPos(ImVec2(cam->GetViewport().min.x, cam->GetViewport().min.y));
+    //ImGui::SetNextWindowSize(ImVec2(cam->GetViewport().Width(), cam->GetViewport().Height()));
+
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(jugimap::settings.GetScreenSize().x, jugimap::settings.GetScreenSize().y));
+
+    ImGui::Begin("My shapes", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs);
+    drawList = ImGui::GetWindowDrawList();
+
+    GetDrawingLayer()->DrawEngineLayer();
+
+    ImGui::End();
+}
+
+
+void DrawerNC::Clear()
+{
+
+
+}
+
+
+void DrawerNC::SetOutlineColor(ColorRGBA _outlineColor)
+{
+    outlineColor = ImColor(_outlineColor.r, _outlineColor.g, _outlineColor.b, _outlineColor.a);
+}
+
+
+void DrawerNC::Line(Vec2f p1, Vec2f p2)
+{
+
+    // we must camera transform the points
+    Camera *cam = GetDrawingLayer()->GetMap()->GetCamera();
+    p1 = cam->ScreenPointFromMapPoint(p1);
+    p2 = cam->ScreenPointFromMapPoint(p2);
+
+    drawList->AddLine(ImVec2(p1.x, ImGui::GetIO().DisplaySize.y-p1.y), ImVec2(p2.x, ImGui::GetIO().DisplaySize.y-p2.y), outlineColor);
+
+}
+
+
+void DrawerNC::RectangleOutline(const Rectf &rect)
+{
+
+    Line(rect.min, Vec2f(rect.max.x, rect.min.y));
+    Line(Vec2f(rect.max.x, rect.min.y), rect.max);
+    Line(rect.max, Vec2f(rect.min.x, rect.max.y));
+    Line(Vec2f(rect.min.x, rect.max.y), rect.min);
+
+}
+
+
+void DrawerNC::EllipseOutline(Vec2f c, Vec2f r)
+{
+
+    float ra = (std::fabs(r.x) + std::fabs(r.y)) / 2;
+    float da = std::acos(ra / (ra + 0.125 /1.0)) * 2;
+    int n = std::round(2*mathPI / da + 0.5);
+
+    float pxPrev = c.x + std::cos(0) * r.x;
+    float pyPrev = c.y + std::sin(0) * r.y;
+
+    for(int i=1; i<=n; i++){
+        float angle = i * 2*mathPI/n;
+        float px = c.x + std::cos( angle ) * r.x;
+        float py = c.y + std::sin( angle ) * r.y;
+        Line(Vec2f(pxPrev,pyPrev), Vec2f(px,py));
+        pxPrev = px;
+        pyPrev = py;
+
+    }
+}
+
+
+void DrawerNC::Dot(Vec2f p)
+{
+
+    p = GetDrawingLayer()->GetMap()->GetCamera()->ScreenPointFromMapPoint(p);
+    drawList->AddCircleFilled(ImVec2(p.x, ImGui::GetIO().DisplaySize.y-p.y), 2, outlineColor, 6);
 
 }
 
@@ -374,12 +475,16 @@ void MapNC::UpdateEngineMap()
 //===================================================================================================
 
 
-
+/*
 void DeleteNCNode(ncine::SceneNode* _node)
 {
 
     if(deleteNCNodesSpecial){
+<<<<<<< HEAD
+        nctl::Array<ncine::SceneNode *>children = _node->children();     // Children list as copy (not reference)!
+=======
         nctl::Array<ncine::SceneNode *>children = _node->children();     // Children array as copy (not reference)!
+>>>>>>> be1dcb3fb6016be6a2749d8b95db80c145dc1d70
         for(ncine::SceneNode* child : children){
             DeleteNCNode(child);
         }
@@ -391,6 +496,7 @@ void DeleteNCNode(ncine::SceneNode* _node)
 }
 
 bool deleteNCNodesSpecial = false;
+*/
 
 ncine::TextNode * errorMessageLabel = nullptr;
 

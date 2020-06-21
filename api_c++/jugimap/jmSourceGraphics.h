@@ -14,6 +14,7 @@ class VectorShape;
 class GraphicFile;
 class SourceSprite;
 class FrameAnimation;
+class TimelineAnimation;
 class StandardSprite;
 class ComposedSprite;
 class SkeletonSprite;
@@ -245,23 +246,32 @@ public:
     std::vector<FrameAnimation*>& GetFrameAnimations(){return frameAnimations;}
 
 
+    /// \brief Returns a reference to the vector of stored timeline animations in this source sprite.
+    std::vector<TimelineAnimation*>& GetTimelineAnimations(){return timelineAnimations;}
+
+
     /// \brief Returns the status flags.
     int GetStatusFlags() {return statusFlags;}
+
+
+    /// \brief Returns a pointer to the owned source composed sprite or nullptr if there is none.
+    ComposedSprite* GetSourceComposedSprite(){return sourceComposedSprite;}
 
 
 private:
     SpriteKind kind = SpriteKind::NOT_DEFINED;
     std::string name;
     std::vector<Parameter> constantParameters;
-    std::vector<GraphicItem*>graphicItems;                     // LINK pointers
-    std::vector<FrameAnimation*>frameAnimations;               // OWNED objects
+    std::vector<GraphicItem*>graphicItems;                     // LINKs
+    std::vector<FrameAnimation*>frameAnimations;               // OWNED
+    std::vector<TimelineAnimation*>timelineAnimations;          // OWNED
 
     std::vector<Parameter> parametersTMP;
 
     int statusFlags = 0;
     bool initialized = false;
 
-    ComposedSprite * SourceComposedSprite = nullptr;          // OWNED
+    ComposedSprite * sourceComposedSprite = nullptr;          // OWNED
 };
 
 

@@ -104,9 +104,10 @@ void Entities::Delete()
     list.clear();
 
     //--- template entities
-    for(EWalkingFella &wf : EWalkingFella::templateFellas){
-        Sprite *s = wf.GetControlledSprite();
-        delete s;
+    for(EWalkingFella *wf : EWalkingFella::templateFellas){
+        Sprite *s = wf->GetControlledSprite();
+        delete s;               // templete sprites are pasive copies not stored in map !
+        delete wf;
     }
 }
 
@@ -142,19 +143,22 @@ bool ESimpleAnimatedObject::Init(Sprite *_sprite)
 
     if(sprite->GetSourceSprite()->GetFrameAnimations().empty()) return false;
 
+    jugimap::FrameAnimation * frameAnimation = nullptr;
     std::string animationName = Parameter::Value(sprite->GetParameters(), "frameAnimation", "");
     if(animationName != ""){
         frameAnimation = FindFrameAnimationWithName(sprite, animationName);
     }
 
     // ... if not choose one animation randomly
-    if(frameAnimation==nullptr){
+    if(frameAnimation ==nullptr){
         int ind = iRand(0, sprite->GetSourceSprite()->GetFrameAnimations().size()-1);
         frameAnimation = sprite->GetSourceSprite()->GetFrameAnimations().at(ind);
     }
 
-    //---
-    animationPlayer.SetSprite(sprite);
+    if(frameAnimation){
+        aniDefault = new FrameAnimationInstance(frameAnimation, sprite);
+    }
+
 
     return true;
 }
@@ -163,13 +167,20 @@ bool ESimpleAnimatedObject::Init(Sprite *_sprite)
 void ESimpleAnimatedObject::Start()
 {
     active = true;
-    animationPlayer.Play(frameAnimation);
+
+    if(aniDefault){
+        animationPlayer.Play(aniDefault);
+    }
+
 }
 
 
 void ESimpleAnimatedObject::Update()
 {
-    animationPlayer.Update();
+
+    if(animationPlayer.Update() & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniDefault->UpdateAnimatedSprites(true);
+    }
 }
 
 
@@ -187,8 +198,22 @@ void ESimpleAnimatedObject::SetPaused(bool _paused)
 
 //==================================================================================================
 
-std::vector<EWalkingFella>EWalkingFella::templateFellas;
+std::vector<EWalkingFella*>EWalkingFella::templateFellas;
 std::vector<EWalkingFella*>EWalkingFella::deactivatedFellas;
+
+
+
+
+EWalkingFella::~EWalkingFella()
+{
+
+    if(aniStandLeft) delete aniStandLeft;
+    if(aniStandRight) delete aniStandRight;
+    if(aniWalkLeft) delete aniWalkLeft;
+    if(aniWalkRight) delete aniWalkRight;
+
+}
+
 
 bool EWalkingFella::Init(Sprite *_sprite)
 {
@@ -200,13 +225,19 @@ bool EWalkingFella::Init(Sprite *_sprite)
     //--- data
     msWaitTime = 400;
     speed = 80.0;
-    faStandLeft = FindFrameAnimationWithName(sprite, "Stand Left");
-    faStandRight = FindFrameAnimationWithName(sprite, "Stand Right");
-    faWalkLeft = FindFrameAnimationWithName(sprite, "Walk Left");
-    faWalkRight = FindFrameAnimationWithName(sprite, "Walk Right");
+    jugimap::FrameAnimation * faStandLeft = FindFrameAnimationWithName(sprite, "Stand Left");
+    jugimap::FrameAnimation * faStandRight = FindFrameAnimationWithName(sprite, "Stand Right");
+    jugimap::FrameAnimation * faWalkLeft = FindFrameAnimationWithName(sprite, "Walk Left");
+    jugimap::FrameAnimation * faWalkRight = FindFrameAnimationWithName(sprite, "Walk Right");
+
     assert(faStandLeft && faStandRight && faWalkLeft && faWalkRight);
+
     if(!(faStandLeft && faStandRight && faWalkLeft && faWalkRight)) return false;
 
+    aniStandLeft = new FrameAnimationInstance(faStandLeft, sprite);
+    aniStandRight = new FrameAnimationInstance(faStandRight, sprite);
+    aniWalkLeft = new FrameAnimationInstance(faWalkLeft, sprite);
+    aniWalkRight = new FrameAnimationInstance(faWalkRight, sprite);
 
 
     //--- start states
@@ -226,14 +257,19 @@ void EWalkingFella::Start()
 {
     active = true;
 
-    frameAnimationPlayer.SetSprite(sprite);
 
     direction = startDirection;
     state = startState;
+
     if(direction==dirRIGHT){
-        frameAnimationPlayer.Play(faWalkRight);
+        aniActive = aniWalkRight;
     }else{
-        frameAnimationPlayer.Play(faWalkLeft);
+        aniActive = aniWalkLeft;
+
+    }
+
+    if(animationPlayer.Play(aniActive) & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniActive->UpdateAnimatedSprites(true);
     }
 
 }
@@ -244,16 +280,15 @@ void EWalkingFella::Update()
 
     if(state==stateSTAND){
 
-        //int msPassed = glob::millisecondsPassed - msTimerStart;
         int msPassed = jugimap::time.GetPassedNetTimeMS() - msTimerStart;
         if(msPassed >= msWaitTime){
             if(direction==dirLEFT){
                 direction = dirRIGHT;
-                frameAnimationPlayer.Play(faWalkRight);
+                aniActive = aniWalkRight;
 
             }else{
                 direction = dirLEFT;
-                frameAnimationPlayer.Play(faWalkLeft);
+                aniActive = aniWalkLeft;
             }
             state = stateWALK;
         }
@@ -280,7 +315,7 @@ void EWalkingFella::Update()
 
 
         // probe points are relative to handle point of the sprite active image; we need their world positions
-        AffineMat3f m = MakeTransformationMatrix(sprite->GetFullPosition(), sprite->GetScale(), sprite->GetFlip(), sprite->GetRotation(), Vec2f());
+        AffineMat3f m = MakeTransformationMatrix(sprite->GetPosition(), sprite->GetScale(), sprite->GetFlip(), sprite->GetRotation(), Vec2f());
 
         //---- check if direction is blocked by 'wall'
         Vec2f pointAhead = m.Transform(probeAhead->point.x, probeAhead->point.y);
@@ -294,17 +329,14 @@ void EWalkingFella::Update()
 
         if(movementBlocked){
             if(direction==dirLEFT){
-                frameAnimationPlayer.Play(faStandLeft);
+                aniActive = aniStandLeft;
             }else{
-                frameAnimationPlayer.Play(faStandRight);
+                aniActive = aniStandRight;
             }
-            //msTimerStart = glob::millisecondsPassed;            // when the way is blocked lets wait a bit before turning around
             msTimerStart = jugimap::time.GetPassedNetTimeMS();            // when the way is blocked lets wait a bit before turning around
             state = stateSTAND;
 
         }else{
-
-            frameAnimationPlayer.Update();
 
             //---
             // Sprite moves over sloping grounds so we need to obtain a ground point ahead of sprite;
@@ -345,15 +377,29 @@ void EWalkingFella::Update()
         }
     }
 
+
+    //---- manage animation player
+
+    int aniPlayerFlags = 0;
+    if(animationPlayer.GetAnimationInstance()!=aniActive){
+        aniPlayerFlags = animationPlayer.Play(aniActive);
+     }else{
+        aniPlayerFlags = animationPlayer.Update();
+    }
+
+    if(aniPlayerFlags & AnimationPlayerFlags::ANIMATED_PROPERTIES_CHANGED){
+        aniActive->UpdateAnimatedSprites(true);
+    }
+
 }
 
 
 void EWalkingFella::SetPaused(bool _paused)
 {
     if(_paused){
-        frameAnimationPlayer.Pause();
+        animationPlayer.Pause();
     }else{
-        frameAnimationPlayer.Resume();
+        animationPlayer.Resume();
     }
 }
 
@@ -376,21 +422,64 @@ void EWalkingFella::OnDeleteFromScene()
 }
 
 
-void EWalkingFella::CopyToTemplates()
+void EWalkingFella::CopyPropertiesFrom(EWalkingFella* _src)
 {
-    templateFellas.push_back(EWalkingFella());
-    EWalkingFella &wf = templateFellas.back();
 
-    wf = *this;
-    wf.sprite = static_cast<jugimap::StandardSprite*>(sprite->MakePassiveCopy());
+    speed = _src->speed;
+    msTimerStart = _src->msTimerStart;
+    msWaitTime = _src->msWaitTime;
+    state = _src->state;
+    direction = _src->direction;
+    startState = _src->startState;
+    startDirection = _src->startDirection;
 }
 
+
+void EWalkingFella::CopyToTemplates()
+{
+
+    EWalkingFella *wf = new EWalkingFella();
+
+    wf->CopyPropertiesFrom(this);
+
+    // copy sprite as passive copy
+    wf->sprite = static_cast<jugimap::StandardSprite*>(sprite->MakePassiveCopy());
+
+    /*
+    // create animation instances
+    if(aniStandLeft){
+        wf->aniStandLeft = new FrameAnimationInstance(static_cast<FrameAnimation*>(aniStandLeft->GetAnimation()), wf->sprite);
+    }
+    if(aniStandRight){
+        wf->aniStandRight = new FrameAnimationInstance(static_cast<FrameAnimation*>(aniStandRight->GetAnimation()), wf->sprite);
+    }
+    if(aniWalkLeft){
+        wf->aniWalkLeft = new FrameAnimationInstance(static_cast<FrameAnimation*>(aniWalkLeft->GetAnimation()), wf->sprite);
+    }
+    if(aniWalkRight){
+        wf->aniWalkRight = new FrameAnimationInstance(static_cast<FrameAnimation*>(aniWalkRight->GetAnimation()), wf->sprite);
+    }
+    */
+
+    templateFellas.push_back(wf);
+
+
+    //templateFellas.push_back(new EWalkingFella(*this));
+    //EWalkingFella &wf = templateFellas.back();
+
+    //wf = *this;
+
+    //EWalkingFella *wf = templateFellas.back();
+
+
+}
 
 
 void EWalkingFella::Spawn()
 {
 
     EWalkingFella *wf = nullptr;
+
 
     if(deactivatedFellas.empty()==false){
 
@@ -399,12 +488,7 @@ void EWalkingFella::Spawn()
         wf = deactivatedFellas.back();
         deactivatedFellas.pop_back();
 
-        StandardSprite *sStored = wf->sprite;
-        *wf = *this;                    // spawned entity will have the same properties
-        wf->sprite = sStored;           // ! must restore original sprite
-
-
-
+        wf->CopyPropertiesFrom(this);     // spawned entity will have the same properties
         wf->sprite->CopyProperties(sprite, Sprite::Property::TRANSFORMATION |  Sprite::Property::APPEARANCE);
         wf->sprite->SetVisible(true);
         wf->Start();
@@ -413,12 +497,14 @@ void EWalkingFella::Spawn()
 
         // Create new WalkingFella and its sprite
 
-        wf = new EWalkingFella(*this);
-        entities.AddEntity(wf);
-        wf->sprite = static_cast<StandardSprite*>(sprite->MakeActiveCopy());
-
+        wf = new EWalkingFella();
+        wf->Init(static_cast<StandardSprite*>(sprite->MakeActiveCopy()));
+        wf->CopyPropertiesFrom(this);                                       // spawned entity will have the same properties
         wf->Start();
+
+        entities.AddEntity(wf);
     }
+
 
 }
 
@@ -446,7 +532,7 @@ bool ERollingStone::Init(Sprite *_sprite)
     if(dynamic_cast<EllipseShape*>(shapes.front()->GetGeometricShape())==nullptr) return false;
     radius = static_cast<EllipseShape*>(shapes.front()->GetGeometricShape())->a;
 
-    tweenStoneRotation.Init(0.0, 360.0, 2, Easing::LINEAR);
+    tweenStoneRotation.Init(0.0, 360.0, 2, Easing::Kind::LINEAR);
 
     //--- start states
     std::string dir = Parameter::Value(sprite->GetParameters(), "startDir");
@@ -588,9 +674,8 @@ bool EMovingPlatform::Init(Sprite *_sprite)
     movementPath = FindVectorShapeWithParameter(sprite->GetLayer()->GetMap(), "id", pathId);
     if(movementPath==nullptr) return false;
 
-    movementPath->CalculatePathLength();
     speed = 300.0;
-    tweenPathMovement.Init(0.0, 1.0, movementPath->GetPathLength()/speed, Easing::EASE_IN_OUT);
+    tweenPathMovement.Init(0.0, 1.0, movementPath->GetPathLength()/speed, Easing::Kind::EASE_START_END);
 
     //----
     startState = stateMOVING_FORWARD;

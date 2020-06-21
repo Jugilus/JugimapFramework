@@ -3,6 +3,7 @@
 #include "jmGlobal.h"
 #include "jmSourceGraphics.h"
 #include "jmFrameAnimation.h"
+#include "jmTimelineAnimation.h"
 #include "jmLayers.h"
 #include "jmMap.h"
 #include "jmSprites.h"
@@ -42,6 +43,28 @@ Layer* FindLayerWithName(Map *map, const std::string &name, LayerKind layerKind)
 //--- COLLECT SPRITES
 
 
+void CollectSpritesWithId(Map *map, std::vector<Sprite*>&collectedSprites,  int id)
+{
+    for(Layer *l : map->GetLayers()){
+        if(l->GetKind()==LayerKind::SPRITE){
+            SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+            CollectSpritesWithId(sl, collectedSprites, id);
+        }
+    }
+}
+
+
+void CollectSpritesWithName(Map *map, std::vector<Sprite*>&collectedSprites,  const std::string &name)
+{
+    for(Layer *l : map->GetLayers()){
+        if(l->GetKind()==LayerKind::SPRITE){
+            SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+            CollectSpritesWithName(sl, collectedSprites, name);
+        }
+    }
+}
+
+
 void CollectSpritesWithParameter(Map *map, std::vector<Sprite *> &collectedSprites,  const std::string &pName, const std::string &pValue)
 {
     for(Layer *l : map->GetLayers()){
@@ -64,14 +87,54 @@ void CollectSpritesWithDataFlags(Map *map, std::vector<Sprite*>&collectedSprites
 }
 
 
-void CollectSpritesWithName(Map *map, std::vector<Sprite*>&collectedSprites,  const std::string &name)
+void CollectSpritesWithSourceSpriteName(Map *map, std::vector<Sprite*>&collectedSprites,  const std::string &name)
 {
     for(Layer *l : map->GetLayers()){
         if(l->GetKind()==LayerKind::SPRITE){
             SpriteLayer * sl = static_cast<SpriteLayer*>(l);
-            CollectSpritesWithName(sl, collectedSprites, name);
+            CollectSpritesWithSourceSpriteName(sl, collectedSprites, name);
         }
     }
+}
+
+
+void CollectSpritesWithId(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  int id)
+{
+
+    for(Sprite *s : layer->GetSprites()){
+        if(s->GetId()==id){
+            collectedSprites.push_back(s);
+        }
+        if(s->GetKind()==SpriteKind::COMPOSED){
+            for(Layer *l : static_cast<ComposedSprite*>(s)->GetLayers()){
+                if(l->GetKind()==LayerKind::SPRITE){
+                    SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+                    CollectSpritesWithId(sl, collectedSprites, id);
+                }
+            }
+        }
+    }
+
+}
+
+
+void CollectSpritesWithName(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  const std::string &name)
+{
+
+    for(Sprite *s : layer->GetSprites()){
+        if(s->GetName()==name){
+            collectedSprites.push_back(s);
+        }
+        if(s->GetKind()==SpriteKind::COMPOSED){
+            for(Layer *l : static_cast<ComposedSprite*>(s)->GetLayers()){
+                if(l->GetKind()==LayerKind::SPRITE){
+                    SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+                    CollectSpritesWithName(sl, collectedSprites, name);
+                }
+            }
+        }
+    }
+
 }
 
 
@@ -120,7 +183,7 @@ void CollectSpritesWithDataFlags(SpriteLayer *layer, std::vector<Sprite*>&collec
 }
 
 
-void CollectSpritesWithName(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  const std::string &name)
+void CollectSpritesWithSourceSpriteName(SpriteLayer *layer, std::vector<Sprite*>&collectedSprites,  const std::string &name)
 {
     for(Sprite *s : layer->GetSprites()){
         if(s->GetSourceSprite()->GetName()==name){
@@ -130,7 +193,7 @@ void CollectSpritesWithName(SpriteLayer *layer, std::vector<Sprite*>&collectedSp
             for(Layer *l : static_cast<ComposedSprite*>(s)->GetLayers()){
                 if(l->GetKind()==LayerKind::SPRITE){
                     SpriteLayer * sl = static_cast<SpriteLayer*>(l);
-                    CollectSpritesWithName(sl, collectedSprites, name);
+                    CollectSpritesWithSourceSpriteName(sl, collectedSprites, name);
                 }
             }
         }
@@ -141,6 +204,21 @@ void CollectSpritesWithName(SpriteLayer *layer, std::vector<Sprite*>&collectedSp
 
 
 //--- FIND VECTOR SHAPE
+
+
+
+VectorShape* FindVectorShapeWithName(Map *map, const std::string &name)
+{
+
+    for(Layer *l : map->GetLayers()){
+        if(l->GetKind()==LayerKind::VECTOR){
+            VectorLayer * vl = static_cast<VectorLayer*>(l);
+            VectorShape * vs = FindVectorShapeWithName(vl, name);
+            if(vs) return vs;
+        }
+    }
+    return nullptr;
+}
 
 
 VectorShape* FindVectorShapeWithParameter(Map *map, const std::string &pName, const std::string &pValue, ShapeKind kind)
@@ -169,6 +247,12 @@ VectorShape* FindVectorShapeWithProperties(Map *map, int probe, int dataFlags, b
 }
 
 
+VectorShape* FindVectorShapeWithName(VectorLayer * vectorLayer, const std::string &name)
+{
+    return FindVectorShapeWithName(vectorLayer->GetVectorShapes(), name);
+}
+
+
 VectorShape* FindVectorShapeWithParameter(VectorLayer * vectorLayer, const std::string &pName, const std::string &pValue, ShapeKind kind)
 {
     return FindVectorShapeWithParameter(vectorLayer->GetVectorShapes(), pName, pValue, kind);
@@ -178,6 +262,17 @@ VectorShape* FindVectorShapeWithParameter(VectorLayer * vectorLayer, const std::
 VectorShape* FindVectorShapeWithProperties(VectorLayer * vectorLayer, int probe, int dataFlags, bool compareDataFlagsAsBitmask, ShapeKind kind)
 {
     return FindVectorShapeWithProperties(vectorLayer->GetVectorShapes(), probe, dataFlags, compareDataFlagsAsBitmask, kind);
+}
+
+
+VectorShape* FindVectorShapeWithName(std::vector<VectorShape *> &vectorShapes, const std::string &name)
+{
+    for(VectorShape * vs : vectorShapes){
+        if(vs->GetName()==name){
+            return vs;
+        }
+    }
+    return nullptr;
 }
 
 
@@ -265,10 +360,8 @@ SourceSprite* FindSourceSpriteByGraphicFilePath(SourceGraphics *sourceGraphics, 
 
 
 
-//--- //--- FIND ANIMATIONS
 
-
-
+//--- FIND ANIMATIONS
 
 
 FrameAnimation* FindFrameAnimationWithName(StandardSprite * standardSprite, const std::string &name)
@@ -277,9 +370,9 @@ FrameAnimation* FindFrameAnimationWithName(StandardSprite * standardSprite, cons
 }
 
 
-FrameAnimation* FindFrameAnimationWithName(std::vector<FrameAnimation*>&frameAnimations, const std::string &name)
+FrameAnimation* FindFrameAnimationWithName(std::vector<FrameAnimation*>&animations, const std::string &name)
 {
-    for(FrameAnimation * fa : frameAnimations){
+    for(FrameAnimation * fa : animations){
         if(fa->GetName()==name){
             return fa;
         }
@@ -288,15 +381,96 @@ FrameAnimation* FindFrameAnimationWithName(std::vector<FrameAnimation*>&frameAni
 }
 
 
-FrameAnimation* FindFrameAnimationWithParameter(std::vector<FrameAnimation*>&frameAnimations, const std::string &pName, const std::string &pValue)
+FrameAnimation* FindFrameAnimationWithParameter(std::vector<FrameAnimation*>&animations, const std::string &pName, const std::string &pValue)
 {
-    for(FrameAnimation * fa : frameAnimations){
+    for(FrameAnimation * fa : animations){
         if(Parameter::Exists(fa->GetParameters(), pName, pValue)){
             return fa;
         }
     }
     return nullptr;
 }
+
+
+//-----
+
+TimelineAnimation* FindTimelineAnimationWithName(StandardSprite * standardSprite, const std::string &name)
+{
+    return FindTimelineAnimationWithName(standardSprite->GetSourceSprite()->GetTimelineAnimations(), name);
+}
+
+
+TimelineAnimation* FindTimelineAnimationWithName(std::vector<TimelineAnimation*>&animations, const std::string &name)
+{
+    for(TimelineAnimation * ta : animations){
+        if(ta->GetName()==name){
+            return ta;
+        }
+    }
+    return nullptr;
+}
+
+
+TimelineAnimation* FindTimelineAnimationWithParameter(std::vector<TimelineAnimation*>&animations, const std::string &pName, const std::string &pValue)
+{
+    for(TimelineAnimation * ta : animations){
+        if(Parameter::Exists(ta->GetParameters(), pName, pValue)){
+            return ta;
+        }
+    }
+    return nullptr;
+}
+
+
+//---
+
+
+
+void GatherSpritesWithSetNameID(ComposedSprite *_composedSprite, std::vector<std::vector<Sprite*>>&spritesPerNameID)
+{
+
+    for(Layer* l : _composedSprite->GetLayers()){
+        if(l->GetKind()==LayerKind::SPRITE){
+            SpriteLayer* sl = static_cast<SpriteLayer*>(l);
+
+            for(Sprite* o : sl->GetSprites()){
+
+                if(o->GetName() != ""){
+
+                    int index = -1;
+                    for(int i=0; i<spritesPerNameID.size(); i++){
+                        if(o->GetName()==spritesPerNameID[i].front()->GetName()){
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if(index==-1){
+                        spritesPerNameID.push_back(std::vector<Sprite*>());
+                        index = spritesPerNameID.size()-1;
+                    }
+
+                    bool objectExist = false;
+                    for(Sprite* o2 : spritesPerNameID[index]){
+                        if(o2==o){
+                            objectExist = true;
+                            break;
+                        }
+                    }
+                    if(objectExist==false){
+                        spritesPerNameID[index].push_back(o);
+                    }
+
+                }
+                if(o->GetKind()==SpriteKind::COMPOSED){
+                    GatherSpritesWithSetNameID(static_cast<ComposedSprite*>(o), spritesPerNameID);
+                }
+            }
+        }
+    }
+}
+
+
 
 
 }

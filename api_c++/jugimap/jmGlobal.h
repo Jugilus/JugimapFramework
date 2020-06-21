@@ -13,7 +13,7 @@ namespace jugimap {
 ///  @{
 
 
-/// The file kinds.
+/// The kinds of file.
 enum class FileKind
 {
     SINGLE_IMAGE,                   ///< Single image file.
@@ -25,7 +25,7 @@ enum class FileKind
 };
 
 
-/// The sprite kinds.
+/// The kinds of sprite. Used as identifier for Sprite objects.
 enum class SpriteKind
 {
     STANDARD,                       ///< Standard sprite - StandardSprite object.
@@ -36,7 +36,7 @@ enum class SpriteKind
 };
 
 
-/// The map types.
+/// The types of map.
 enum class MapType
 {
     WORLD,                  ///< World map.
@@ -46,7 +46,7 @@ enum class MapType
 };
 
 
-/// The layer kinds.
+/// The kinds of layer. Used as identifier for Layer objects.
 enum class LayerKind
 {
     SPRITE,                     ///< %Sprite layer - SpriteLayer object.
@@ -58,15 +58,8 @@ enum class LayerKind
 };
 
 
-/// The world layer modes.
-enum class WorldLayerMode
-{
-    NO_CHANGE                           ///< %Layer unchanged from the editor.
-};
 
-
-
-/// The layer types.
+/// The types of layer. Used to distinguish layers for world, parallax and screen maps.
 enum class LayerType
 {
     WORLD,
@@ -84,31 +77,6 @@ enum class StretchingVariant
     XY_TO_WORLD_SIZE,
     XY_TO_VIEWPORT_SIZE
 };
-
-
-/*
-/// The parallax layer modes.
-enum class ParallaxLayerMode
-{
-    STANDARD,
-    STRETCHING_SINGLE_SPRITE
-
-};
-*/
-
-/// The screen layer modes.
-//enum class ScreenLayerMode
-//{
-//    STANDARD,
-//    STRETCHING_SINGLE_SPRITE
-
-    /*
-    NO_CHANGE,                          ///< %Layer unchanged from the editor.
-    SINGLE_SPRITE_STRETCH_X,            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in x direction.
-    SINGLE_SPRITE_STRETCH_Y,            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in y direction.
-    SINGLE_SPRITE_STRETCH_XY            ///< Special mode for single sprite layers: stretch sprite to fit the world map size in x and y directions.
-    */
-//};
 
 
 /// The align factors for the X direction.
@@ -139,10 +107,10 @@ enum class Blend
 };
 
 
-/// The blend modes for the shader based pixel blending simulating photoshop blending modes.
+/// The blend modes for the shader based pixel blending which simulate photoshop blending modes.
 enum class ColorOverlayBlend
 {
-    SIMPLE_MULTIPLY,                    ///< Simple multiply - not a real blending.
+    SIMPLE_MULTIPLY,                    ///< Simple multiply (not a real blending).
     NORMAL,                             ///< Normal mode.
     MULTIPLY,                           ///< Multiply mode.
     LINEAR_DODGE,                       ///< Linear dodge mode.
@@ -151,7 +119,7 @@ enum class ColorOverlayBlend
 };
 
 
-/// The font kinds.
+/// The kinds of font.
 enum class FontKind
 {
     TRUE_TYPE,                          ///< True type font.
@@ -159,14 +127,88 @@ enum class FontKind
 };
 
 
-/// The shape kinds.
-enum class ShapeKind{
+/// The kinds of geometric shape. Used as identifier for GeometricShape and VectorShape objects.
+enum class ShapeKind
+{
     POLYLINE,                   ///< Polyline - PolyLineShape object.
-    BEZIER_POLYCURVE,           ///< Bezier path - BezierShape object.
+    BEZIER_POLYCURVE,           ///< Bezier polycurve - BezierShape object.
     ELLIPSE,                    ///< Ellipse - EllipseShape object.
     SINGLE_POINT,               ///< Single point - SinglePointShape object.
     NOT_DEFINED                 ///< The shape kind not defined.
 };
+
+
+
+/// The kinds of animation. Used as identifier for Animation objects.
+enum class AnimationKind
+{
+    FRAME_ANIMATION = 0,        ///< Frame animation - FrameAnimation object.
+    TIMELINE_ANIMATION = 1,     ///< Timeline animation - TimelineAnimation object.
+    NOT_DEFINED = -1
+};
+
+
+//==================================================================================
+
+
+/// The kinds of animation track. Used as identifier for AnimationTrack and AnimationKey classes.
+enum class AnimationTrackKind
+{
+    TRANSLATION,                ///< Translation.
+    SCALING,                    ///< Scaling.
+    ROTATION,                   ///< Rotation.
+    ALPHA_CHANGE,               ///< Alpha change.
+    OVERLAY_COLOR_CHANGE,       ///< Overlay color change.
+    PATH_MOVEMENT,              ///< Path movement.
+    FRAME_CHANGE,               ///< Frame change.
+    FRAME_ANIMATION,            ///< Frame animation.
+    TIMELINE_ANIMATION,         ///< Timeline animation.
+    FLIP_HIDE,                  ///< Flip, hide.
+    META,                       ///< Meta.
+    NOT_DEFINED                 ///< Not defined.
+
+};
+
+
+
+
+/// The states of animation player.
+enum class AnimationPlayerState
+{
+    IDLE,                       ///< The player is idle and has assigned no animation instance.
+    PLAYING,                    ///< The player is playing and updating animation instance.
+    STALLED,                    ///< The player is playing but animation instance is not being updated. This a case when an animation is not being looped and remains in its end state.
+    PAUSED,                     ///< The player has been paused.
+    WAITING_TO_START,           ///< The player is waiting to start animation due to the *startDelay* parameter.
+    WAITING_TO_REPEAT           ///< The player is waiting to repeat animation due to the *repeat* parameter.
+};
+
+
+
+///\ingroup Animation
+/// \brief The bit-mask flags of animation player.
+struct AnimationPlayerFlags
+{
+
+    static const int NONE = 0;                          ///< None.
+
+    // Play
+    static const int DISCARD_ANIMATION_QUEUE = 1;       ///< Stop and discard animations in queue and start the new animation immediately. This is an input flag for AnimationQueuePlayer::Play.
+    static const int SKIP_SUBPLAYER_UPDATING = 2;       ///< Not available.
+
+
+
+    // Return flags
+    static const int PLAYER_STARTED = 1;                ///< The return flag for AnimationQueuePlayer::Play command. If the player already plays the given animation this flag is not returned.
+    static const int PLAYER_UPDATED = 2;                ///< The return flag for AnimationQueuePlayer::Update command. If the player is in the in the idle state this flag is not returned.
+    static const int PLAYER_STOPPED = 4;                ///< The return flag for AnimationQueuePlayer::Stop command. If the player is already in the idle state this flag is not returned.
+    static const int ANIMATION_INSTANCE_UPDATED = 8;    ///< The return flag for AnimationQueuePlayer::Play and AnimationQueuePlayer::Update commands when the animation update has been performed.
+    static const int ANIMATED_PROPERTIES_CHANGED = 16;  ///< The return flag for AnimationQueuePlayer::Play and AnimationQueuePlayer::Update commands when the animated properties have been changed.
+    static const int META_KEY_CHANGED = 32;             ///< The return flag for AnimationQueuePlayer::Play and AnimationQueuePlayer::Update commands when the meta animation key changes.
+
+};
+
+
 
 
 
@@ -329,6 +371,16 @@ public:
 
 
 
+    //---------------
+    ///\brief Set the *z-order* step. Used by engines which use a z-order factor for drawing order of sprites.
+    void SetZOrderStep(int _zOrderStep){ zOrderStep = _zOrderStep; }
+
+    ///\brief Returns the *z-order* step.
+    int GetZOrderStep(){ return zOrderStep; }
+
+
+
+
 private:
 
     Vec2i screenSize;
@@ -337,9 +389,10 @@ private:
     bool lerpDrawingEnabled = false;
     bool enginePhysicsEnabled = true;
     std::string errorMessage;
-    long int millisecondsPassed = 0;
+    //long int millisecondsPassed = 0;
     float lerpDrawingFactor = 1.0;
-    float logicTimeStepMS;
+    //float logicTimeStepMS;
+    int zOrderStep = 10;
 
 };
 

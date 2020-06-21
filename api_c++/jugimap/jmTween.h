@@ -5,25 +5,11 @@
 #include <vector>
 #include <string>
 
+#include "jmCommon.h"
+
 
 
 namespace jugimap {
-
-
-
-
-struct Easing
-{
-    int kind = LINEAR;
-    static const int LINEAR = 0;
-    static const int EASE_IN = 1;
-    static const int EASE_OUT = 2;
-    static const int EASE_IN_OUT = 3;
-
-    float GetValue(float p);
-
-};
-
 
 
 
@@ -39,7 +25,7 @@ public:
 
     ~Tween();
 
-    void Init(float _valueStart, float _valueEnd, float _durationS, int _easingKind);
+    void Init(float _valueStart, float _valueEnd, float _durationS, Easing::Kind _easingKind);
     void Play();
     bool IsIdle() { return state==stateIDLE; }
 
@@ -48,7 +34,7 @@ public:
     void Resume();
 
     float GetValue() { return value;}
-    void SetEasingKind(int _easingKind) { easing.kind = _easingKind; }
+    void SetEasingKind(Easing::Kind _kind) { easing.kind = _kind; }
     void SetMode(Tween::Mode _mode) { mode = _mode;}
     float GetStartValue(){ return valueStart;}
     float GetEndValue(){ return valueEnd;}
@@ -91,7 +77,7 @@ public:
     static void RemoveTween(Tween * _tween);
 
 private:
-    static std::vector<Tween*>tweensVector;        // LINK pointers
+    static std::vector<Tween*>vTweens;        // LINK pointers
 
 };
 

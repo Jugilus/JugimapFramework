@@ -26,8 +26,10 @@ public:
     ncine::SceneNode * GetNCNode(){ return ncNode;}
 
 
+
 protected:
     void UpdateTexts() override;
+
 
 private:
     ncine::SceneNode * ncNode = nullptr;

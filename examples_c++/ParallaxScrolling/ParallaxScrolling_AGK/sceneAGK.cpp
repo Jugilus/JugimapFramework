@@ -13,8 +13,6 @@ bool ParallaxSceneAGK::Init()
     zOrderBackgroundMap = 5000;
     zOrderWorldMap = 4000;
     zOrderScreenMap = 3000;
-    jugimap::JugiMapBinaryLoader::zOrderCounterStep = -10;
-
 
     // Engine indpenedent scene initialization
     if(ParallaxScene::Init()==false){

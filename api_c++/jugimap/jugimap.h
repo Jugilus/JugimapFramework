@@ -17,6 +17,9 @@
 #include "jmDrawing.h"
 #include "jmCollision.h"
 #include "jmFrameAnimation.h"
+#include "jmAnimationCommon.h"
+#include "jmTimelineAnimation.h"
+#include "jmTimelineAnimationInstance.h"
 #include "jmObjectFactory.h"
 #include "jmTween.h"
 #include "jmCamera.h"
@@ -61,7 +64,7 @@ namespace jugimap
 /// ### Cocos2d-x nodes ownership
 /// Jugimap extended classes which wrap Cocos2d-x node objects does **not** take ownership over them.
 /// When deleting a jugimap scene first delete its Cocos2d scene node via
-/// Cocos2d director. For deleting sprites or text objects use dedicated layer functions which also
+/// Cocos2d director. For deleting jugimap sprites or text objects use dedicated layer functions which also
 /// remove related Cocos2d-x nodes.
 ///
 
@@ -73,7 +76,7 @@ namespace jugimap
 ///
 /// ### nCine nodes ownership
 /// Jugimap extended classes which wrap nCIne node objects does **not** take ownership over them. The exception are Scene objects.
-/// For deleting sprites or text objects use dedicated layer functions which also
+/// For deleting jugimap sprites or text objects use dedicated layer functions which also
 /// delete related nCine nodes.
 ///
 

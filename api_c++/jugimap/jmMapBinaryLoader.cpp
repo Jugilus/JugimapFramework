@@ -9,6 +9,7 @@
 #include "jmVectorShapes.h"
 #include "jmVectorShapesUtilities.h"
 #include "jmFrameAnimation.h"
+#include "jmTimelineAnimation.h"
 #include "jmObjectFactory.h"
 #include "jmStreams.h"
 #include "jmMapBinaryLoader.h"
@@ -26,11 +27,11 @@ namespace jugimap{
 std::string JugiMapBinaryLoader::pathPrefix = "";
 std::string JugiMapBinaryLoader::error = "";
 std::vector<std::string> JugiMapBinaryLoader::messages;
-bool JugiMapBinaryLoader::usePixelCoordinatesForTileLayerSprites = true;
-//bool JugiMapBinaryLoader::yCoordinateUp = false;
+//bool JugiMapBinaryLoader::usePixelCoordinatesForTileLayerSprites = true;
 int JugiMapBinaryLoader::zOrderCounterStart = 1000;
 int JugiMapBinaryLoader::zOrderCounter = 1000;         // starting depth value (the lowest layer)
-int JugiMapBinaryLoader::zOrderCounterStep = 10;
+//int JugiMapBinaryLoader::zOrderCounterStep = 10;
+
 
 
 
@@ -171,8 +172,8 @@ bool JugiMapBinaryLoader::LoadMap(std::string _filePath, Map* _map, SourceGraphi
     //loader.indexBeginSourceSprites = _indexBeginSourceSprites;
     if(objectFactory==nullptr) objectFactory = &genericObjectFactory;
     loader.map = _map;
-    JugiMapBinaryLoader::zOrderCounterStart = _map->GetZOrderStart();
-    JugiMapBinaryLoader::zOrderCounter = JugiMapBinaryLoader::zOrderCounterStart;
+    JugiMapBinaryLoader::zOrderCounterStart = JugiMapBinaryLoader::zOrderCounter = _map->GetZOrderStart();
+
 
     //----
     loader.map->name = _filePath;
@@ -570,8 +571,8 @@ SourceSprite * JugiMapBinaryLoader::LoadSourceSprite(BinaryStreamReader &stream,
 
         }else if(signature==SaveSignature::COMPOSED_SPRITE){
 
-            ss->SourceComposedSprite = LoadComposedSpriteData(stream,sizeChunk);
-            if(ss->SourceComposedSprite){
+            ss->sourceComposedSprite = LoadComposedSpriteData(stream,sizeChunk);
+            if(ss->sourceComposedSprite){
                 // empty
 
             }else{
@@ -595,6 +596,26 @@ SourceSprite * JugiMapBinaryLoader::LoadSourceSprite(BinaryStreamReader &stream,
                     }
                 }else{
                     messages.push_back("LoadSourceSprite - FRAME_ANIMATIONS - unknown signature: " + std::to_string(signature2));
+                    stream.Seek(posChunk2+sizeChunk2);
+                }
+            }
+
+        }else if(signature==SaveSignature::TIMELINE_ANIMATIONS){
+
+            int nAnimations = stream.ReadInt();
+
+            for(int i=0; i<nAnimations; i++){
+                int signature2 = stream.ReadInt();
+                int sizeChunk2 = stream.ReadInt();
+                int posChunk2 = stream.Pos();
+
+                if(signature2==SaveSignature::TIMELINE_ANIMATION){
+                    TimelineAnimation *ta = LoadTimelineAnimation(stream, sizeChunk2, ss);
+                    if(ta){
+                        ss->timelineAnimations.push_back(ta);
+                    }
+                }else{
+                    messages.push_back("LoadSourceSprite - TIMELINE_ANIMATIONS - unknown signature: " + std::to_string(signature2));
                     stream.Seek(posChunk2+sizeChunk2);
                 }
             }
@@ -832,7 +853,8 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
     if(map){
         layer->map = map;
         layer->zOrder = zOrderCounter;
-        zOrderCounter += zOrderCounterStep;
+        //zOrderCounter += zOrderCounterStep;
+        zOrderCounter += settings.GetZOrderStep();
     }
 
 
@@ -868,7 +890,7 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
             layer->boundingBox.max.y = stream.ReadFloat();
 
             if(settings.IsYCoordinateUp()){
-                float yMin,yMax;
+                float yMin=0,yMax=0;
                 if(loadedComposedSprite){                           // a child of loadedComposedSprite
                     yMin = loadedComposedSprite->size.y - layer->boundingBox.max.y;
                     yMax = loadedComposedSprite->size.y - layer->boundingBox.min.y;
@@ -907,10 +929,15 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
                 s->parentComposedSprite = layer->parentComposedSprite;
 
                 //---
-                s->position.x = stream.ReadInt();
-                s->position.y = stream.ReadInt();
+                if(LoadSpriteData(stream, s)==false){
+                    assert(false);
+                    delete s;
+                    delete layer;
+                    return nullptr;
+                }
 
-                if(usePixelCoordinatesForTileLayerSprites && layer->editorTileLayer){
+                //if(usePixelCoordinatesForTileLayerSprites && layer->editorTileLayer){
+                if(layer->editorTileLayer){
                     if(loadedComposedSprite){
                         s->position.x = s->position.x*loadedComposedSprite->tileSize.x + loadedComposedSprite->tileSize.x/2.0;
                         s->position.y = s->position.y*loadedComposedSprite->tileSize.y + loadedComposedSprite->tileSize.y/2.0;
@@ -919,64 +946,6 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
                         s->position.y = s->position.y*map->tileSize.y + map->tileSize.y/2.0;
                     }
                 }
-
-
-                //---- PROPERTIES
-                const int flagXflip = 1;
-                const int flagYflip = 2;
-                const int flagUniformScale = 4;
-                const int flagSavedXscale = 8;
-                const int flagSavedYscale = 16;
-                const int flagSavedRotation = 32;
-                const int flagSavedDataFlag = 64;
-                const int flagSavedXdelta = 128;
-                const int flagSavedYdelta = 256;
-                const int flagSavedAlpha = 512;
-                const int flagSavedExtraProperty_ColorBlend = 1024;
-
-                const int transformSaveFlags = stream.ReadInt();
-
-                if(transformSaveFlags & flagXflip) s->flip.x = true;
-                if(transformSaveFlags & flagYflip) s->flip.y = true;
-                if(transformSaveFlags & flagSavedXscale) s->scale.x = stream.ReadFloat();
-                if(transformSaveFlags & flagSavedYscale) s->scale.y = stream.ReadFloat();
-                if(transformSaveFlags & flagUniformScale) s->scale.y = s->scale.x;
-                if(transformSaveFlags & flagSavedRotation) s->rotation = stream.ReadFloat();
-                if(transformSaveFlags & flagSavedXdelta) s->animationFrameOffset.x = stream.ReadFloat();
-                if(transformSaveFlags & flagSavedYdelta) s->animationFrameOffset.y = stream.ReadFloat();
-                if(transformSaveFlags & flagSavedAlpha){
-                    s->alpha = stream.ReadFloat();
-                }
-                if(transformSaveFlags & flagSavedExtraProperty_ColorBlend){
-                    s->colorOverlayActive = true;
-                    s->colorOverlayRGBA = ColorRGBA(stream.ReadInt());
-                    int colorBlendMode = stream.ReadInt();
-                    const int blendSIMPLE_MULTIPLY = 0;
-                    const int blendNORMAL = 1;
-                    const int blendMULTIPLY = 2;
-                    const int blendLINEAR_DODGE = 3;
-                    const int blendCOLOR = 4;
-
-                    if(colorBlendMode==blendSIMPLE_MULTIPLY){
-                        s->colorOverlayBlend = ColorOverlayBlend::SIMPLE_MULTIPLY;
-
-                    }else if(colorBlendMode==blendNORMAL){
-                        s->colorOverlayBlend = ColorOverlayBlend::NORMAL;
-
-                    }else if(colorBlendMode==blendMULTIPLY){
-                        s->colorOverlayBlend = ColorOverlayBlend::MULTIPLY;
-
-                    }else if(colorBlendMode==blendLINEAR_DODGE){
-                        s->colorOverlayBlend = ColorOverlayBlend::LINEAR_DODGE;
-
-                    }else if(colorBlendMode==blendCOLOR){
-                        s->colorOverlayBlend = ColorOverlayBlend::COLOR;
-                    }
-
-                }
-
-                if(transformSaveFlags & flagSavedDataFlag) s->dataFlags = stream.ReadInt();
-
 
                 if(settings.IsYCoordinateUp()){
                     if(loadedComposedSprite){   // sprite is child of loadedComposedSprite
@@ -988,71 +957,41 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
                     s->rotation = -s->rotation;
                 }
 
-                // sprite parameters
-                int nParameters = stream.ReadInt();
-                if(nParameters != ss->parametersTMP.size()){
-                    error = "LoadLayer nParameters:" + to_string(nParameters) + " different then for the source object: " + to_string(ss->parametersTMP.size());
-                    assert(false);
-                    delete s;
-                    delete layer;
-                    return nullptr;
-                }
-
-                for(int i=0; i<nParameters; i++){
-
-                    Parameter &pvSource = ss->parametersTMP[i];
-                    Parameter pv;
-
-                    pv.name = pvSource.name;
-                    pv.kind = pvSource.kind;
-
-                    bool pvActive = (bool)stream.ReadByte();
-
-                    if(pv.kind==jmINTEGER){
-                        int valueInt = stream.ReadInt();
-                        pv.value = to_string(valueInt);
-
-                    }else if(pv.kind==jmFLOAT){
-                        float valueFloat = stream.ReadFloat();
-                        pv.value = to_string(valueFloat);
-
-                    }else if(pv.kind==jmBOOLEAN){
-                        //empty
-
-                    }else if(pv.kind==jmSTRING){
-                        pv.value = stream.ReadString();
-
-                    }else if(pv.kind==jmVALUES_SET){
-                        pv.value = stream.ReadString();
-                    }
-
-                    if(pvActive){
-                        s->parameters.push_back(pv);
-                    }
-                }
-
 
                 //----
                 if(ss->kind==SpriteKind::COMPOSED){
-                    assert(ss->SourceComposedSprite);
-                    if(ss->SourceComposedSprite==nullptr){
+                    assert(ss->sourceComposedSprite);
+                    if(ss->sourceComposedSprite==nullptr){
                         error = "LoadLayer error! Missing SourceComposedSprite for source sprite: " + ss->name;
                         delete layer;
                         return nullptr;
                     }
 
-                    s->handle = ss->SourceComposedSprite->handle;
+                    s->handle = ss->sourceComposedSprite->handle;
                     //if(configuration.IsYCoordinateUp()){
                     //    s->handle.y = ss->SourceComposedSprite->size.y - s->handle.y;
                     //}
                     if(map){
-                        if(ss->name=="csRedDiamond"){
+                        if(ss->name=="rotatorA"){
                             DummyFunction();
                         }
                     }
 
                     JugiMapBinaryLoader* loader = (map!=nullptr)? this : nullptr;
-                    ComposedSprite::CopyLayers(ss->SourceComposedSprite, static_cast<ComposedSprite*>(s), loader);
+                    //ComposedSprite::CopyLayers(ss->sourceComposedSprite, static_cast<ComposedSprite*>(s), loader);
+                    int zOrder = layer->zOrder;
+                    if(map){
+                        DummyFunction();
+                    }
+                    ComposedSprite::CopyLayers(ss->sourceComposedSprite, static_cast<ComposedSprite*>(s), zOrder);
+
+                    if(map){
+                        if(settings.GetZOrderStep()>0){
+                            zOrderCounter = std::max(zOrderCounter, zOrder);     // !
+                        }else{
+                            zOrderCounter = std::min(zOrderCounter, zOrder);
+                        }
+                    }
                 }
 
                 //---
@@ -1142,10 +1081,259 @@ SpriteLayer *JugiMapBinaryLoader::LoadLayer(BinaryStreamReader &stream, int size
         return nullptr;
     }
 
+    if(map){
+        DbgOutput("Map Layer:"+layer->GetName() + " zOrder:" + std::to_string(layer->zOrder));
+    }
+
     return layer;
 
 }
 
+
+ColorOverlayBlend GetColorOverlayBlendFromInt(int _value)
+{
+
+    const int blendSIMPLE_MULTIPLY = 0;
+    const int blendNORMAL = 1;
+    const int blendMULTIPLY = 2;
+    const int blendLINEAR_DODGE = 3;
+    const int blendCOLOR = 4;
+
+    if(_value==blendSIMPLE_MULTIPLY){
+        return ColorOverlayBlend::SIMPLE_MULTIPLY;
+
+    }else if(_value==blendNORMAL){
+        return ColorOverlayBlend::NORMAL;
+
+    }else if(_value==blendMULTIPLY){
+        return ColorOverlayBlend::MULTIPLY;
+
+    }else if(_value==blendLINEAR_DODGE){
+        return ColorOverlayBlend::LINEAR_DODGE;
+
+    }else if(_value==blendCOLOR){
+        return ColorOverlayBlend::COLOR;
+    }
+
+    return ColorOverlayBlend::NOT_DEFINED;
+
+}
+
+
+bool JugiMapBinaryLoader::LoadSpriteData(BinaryStreamReader &stream, Sprite *s)
+{
+
+    s->position.x = stream.ReadInt();
+    s->position.y = stream.ReadInt();
+
+    /*
+    if(usePixelCoordinatesForTileLayerSprites && layer->editorTileLayer){
+        if(loadedComposedSprite){
+            s->position.x = s->position.x*loadedComposedSprite->tileSize.x + loadedComposedSprite->tileSize.x/2.0;
+            s->position.y = s->position.y*loadedComposedSprite->tileSize.y + loadedComposedSprite->tileSize.y/2.0;
+        }else if(map){
+            s->position.x = s->position.x*map->tileSize.x + map->tileSize.x/2.0;
+            s->position.y = s->position.y*map->tileSize.y + map->tileSize.y/2.0;
+        }
+    }
+    */
+
+
+
+    //---- PROPERTIES
+    /*
+    const int flagXflip = 1;
+    const int flagYflip = 2;
+    const int flagUniformScale = 4;
+    const int flagSavedXscale = 8;
+    const int flagSavedYscale = 16;
+    const int flagSavedRotation = 32;
+    const int flagSavedDataFlag = 64;
+    const int flagSavedXdelta = 128;
+    const int flagSavedYdelta = 256;
+    const int flagSavedAlpha = 512;
+    const int flagSavedExtraProperty_ColorBlend = 1024;
+    */
+
+    const int saveFLIP_X =          1 << 0;
+    const int saveFLIP_Y =          1 << 1;
+    const int saveSCALE_UNIFORM =   1 << 2;
+    const int saveSCALE_X =         1 << 3;
+    const int saveSCALE_Y =         1 << 4;
+    const int saveROTATION =        1 << 5;
+    //const int flagSavedXPropAni = 1 << 7;
+    //const int flagSavedYPropAni = 1 << 8;
+    const int saveALPHA =           1 << 6;
+    const int saveOVERLAY_COLOR =   1 << 7;
+
+    const int saveID =              1 << 10;
+    const int saveNAME_ID =         1 << 11;
+    const int saveDATA_FLAG =       1 << 12;
+
+    const int saved = stream.ReadInt();
+
+    if(saved & saveFLIP_X) s->flip.x = true;
+    if(saved & saveFLIP_Y) s->flip.y = true;
+    if(saved & saveSCALE_X) s->scale.x = stream.ReadFloat();
+    if(saved & saveSCALE_Y) s->scale.y = stream.ReadFloat();
+    if(saved & saveSCALE_UNIFORM) s->scale.y = s->scale.x;
+    if(saved & saveROTATION) s->rotation = stream.ReadFloat();
+    //if(transformSaveFlags & flagSavedXdelta) s->animationFrameOffset.x = stream.ReadFloat();
+    //if(transformSaveFlags & flagSavedYdelta) s->animationFrameOffset.y = stream.ReadFloat();
+    if(saved & saveALPHA) s->alpha = stream.ReadFloat();
+
+    if(saved & saveOVERLAY_COLOR){
+        s->colorOverlayActive = true;
+        s->colorOverlayRGBA = ColorRGBA(stream.ReadInt());
+        int colorBlendMode = stream.ReadInt();
+
+        /*
+        const int blendSIMPLE_MULTIPLY = 0;
+        const int blendNORMAL = 1;
+        const int blendMULTIPLY = 2;
+        const int blendLINEAR_DODGE = 3;
+        const int blendCOLOR = 4;
+
+        if(colorBlendMode==blendSIMPLE_MULTIPLY){
+            s->colorOverlayBlend = ColorOverlayBlend::SIMPLE_MULTIPLY;
+
+        }else if(colorBlendMode==blendNORMAL){
+            s->colorOverlayBlend = ColorOverlayBlend::NORMAL;
+
+        }else if(colorBlendMode==blendMULTIPLY){
+            s->colorOverlayBlend = ColorOverlayBlend::MULTIPLY;
+
+        }else if(colorBlendMode==blendLINEAR_DODGE){
+            s->colorOverlayBlend = ColorOverlayBlend::LINEAR_DODGE;
+
+        }else if(colorBlendMode==blendCOLOR){
+            s->colorOverlayBlend = ColorOverlayBlend::COLOR;
+        }
+        */
+        s->colorOverlayBlend = GetColorOverlayBlendFromInt(colorBlendMode);
+
+
+    }
+
+    if(saved & saveID) s->id = stream.ReadInt();
+    if(saved & saveNAME_ID) s->name = stream.ReadString();
+    if(saved & saveDATA_FLAG) s->dataFlags = stream.ReadInt();
+
+    if(s->name!=""){
+        DummyFunction();
+    }
+
+    /*
+    const int saveFLIP_X = 1 << 0;
+    const int saveFLIP_Y = 1 << 1;
+    const int saveSCALE_UNIFORM = 1 << 2;
+    const int saveSCALE_X = 1 << 3;
+    const int saveSCALE_Y = 1 << 4;
+    const int saveROTATION = 1 << 5;
+    //const int flagSavedXPropAni = 1 << 7;
+    //const int flagSavedYPropAni = 1 << 8;
+    const int saveALPHA = 1 << 6;
+    const int saveOVERLAY_COLOR = 1 << 7;
+
+    const int saveID = 1 << 10;
+    const int saveNAME_ID = 1 << 11;
+    const int saveDATA_FLAG = 1 << 12;
+
+
+    int save = 0;
+    if(xFlip) save |= saveFLIP_X;
+    if(yFlip) save |= saveFLIP_Y;
+    if(uniformScale) save |= saveSCALE_UNIFORM;
+    if(AreSame(xScale, 1.0)==false) save |= saveSCALE_X;
+    if(AreSame(yScale, 1.0)==false && uniformScale==false) save |= saveSCALE_Y;
+    if(AreSame(rotation, 0.0)==false) save |= saveROTATION;
+    //if(AreSame(posPropAni.x, 0.0)==false) propertySaveFlags |= flagSavedXPropAni;
+    //if(AreSame(posPropAni.y, 0.0)==false) propertySaveFlags |= flagSavedYPropAni;
+    if(AreSame(alpha, 1.0)==false) save |= saveALPHA;
+    if(extraProperties.GetKind()==TShaderBasedProperties::kindOVERLAY_COLOR) save |= saveOVERLAY_COLOR;
+
+    if(id!=0) save |= saveID;
+    if(nameID.isEmpty()==false) save |= saveNAME_ID;
+    if(dataFlags!=0) save |= saveDATA_FLAG;
+
+
+    Stream.WriteInt(save);
+    if(save & saveSCALE_X) Stream.WriteFloat(xScale);
+    if(save & saveSCALE_Y) Stream.WriteFloat(yScale);
+    if(save & saveROTATION) Stream.WriteFloat(rotation);
+    //if(propertySaveFlags & flagSavedXPropAni) Stream.WriteFloat(posPropAni.x);
+    //if(propertySaveFlags & flagSavedYPropAni) Stream.WriteFloat(posPropAni.y);
+    if(save & saveALPHA) Stream.WriteFloat(alpha);
+    if(save & saveOVERLAY_COLOR){
+        Stream.WriteInt(extraProperties.colorRGBA.GetRGBA());
+        Stream.WriteInt(extraProperties.blend);
+    }
+    if(save & saveID) Stream.WriteInt(id);
+    if(save & saveNAME_ID) Stream.WriteLatin1StringWithLength(nameID);
+    if(save & saveDATA_FLAG) Stream.WriteInt(dataFlags);
+    */
+
+
+    /*
+    if(settings.IsYCoordinateUp()){
+        if(loadedComposedSprite){   // sprite is child of loadedComposedSprite
+            //s->pos.y = loadedComposedSprite->nTiles.y * loadedComposedSprite->tileSize.y - s->pos.y;
+            s->position.y = loadedComposedSprite->size.y - s->position.y;
+        }else if(map){
+            s->position.y = map->nTiles.y * map->tileSize.y - s->position.y;
+        }
+        s->rotation = -s->rotation;
+    }
+    */
+
+    // sprite parameters
+    int nParameters = stream.ReadInt();
+    if(nParameters != s->sourceSprite->parametersTMP.size()){
+        error = "LoadLayer nParameters:" + to_string(nParameters) + " different then for the source object: " + to_string(s->sourceSprite->parametersTMP.size());
+        //assert(false);
+        //delete s;
+        //delete layer;
+        //return nullptr;
+        return false;
+    }
+
+    for(int i=0; i<nParameters; i++){
+
+        Parameter &pvSource = s->sourceSprite->parametersTMP[i];
+        Parameter pv;
+
+        pv.name = pvSource.name;
+        pv.kind = pvSource.kind;
+
+        bool pvActive = (bool)stream.ReadByte();
+
+        if(pv.kind==jmINTEGER){
+            int valueInt = stream.ReadInt();
+            pv.value = to_string(valueInt);
+
+        }else if(pv.kind==jmFLOAT){
+            float valueFloat = stream.ReadFloat();
+            pv.value = to_string(valueFloat);
+
+        }else if(pv.kind==jmBOOLEAN){
+            //empty
+
+        }else if(pv.kind==jmSTRING){
+            pv.value = stream.ReadString();
+
+        }else if(pv.kind==jmVALUES_SET){
+            pv.value = stream.ReadString();
+        }
+
+        if(pvActive){
+            s->parameters.push_back(pv);
+        }
+    }
+
+
+    return true;
+
+}
 
 
 VectorLayer* JugiMapBinaryLoader::LoadVectorLayer(BinaryStreamReader &stream, int size)
@@ -1155,7 +1343,9 @@ VectorLayer* JugiMapBinaryLoader::LoadVectorLayer(BinaryStreamReader &stream, in
     vl->kind = LayerKind::VECTOR;
     if(map){
         vl->map = map;
-        zOrderCounter += zOrderCounterStep;
+        vl->zOrder = zOrderCounter;
+        zOrderCounter += settings.GetZOrderStep();
+        //zOrderCounter += zOrderCounterStep;
     }
 
 
@@ -1178,7 +1368,7 @@ VectorLayer* JugiMapBinaryLoader::LoadVectorLayer(BinaryStreamReader &stream, in
 
             vl->name = stream.ReadString();
 
-        }else if(signature==SaveSignature::VECTOR_SHAPES){
+        }else if(signature==SaveSignature::VECTOR_SHAPES_V2){
 
             int nVectorShapes = stream.ReadInt();
             for(int i=0; i<nVectorShapes; i++){
@@ -1189,6 +1379,7 @@ VectorLayer* JugiMapBinaryLoader::LoadVectorLayer(BinaryStreamReader &stream, in
                 if(signature2==SaveSignature::VECTOR_SHAPE){
                     VectorShape *vs = LoadVectorShape(stream, sizeChunk2);
                     if(vs){
+                        vs->RebuildPath();
                         vl->vectorShapes.push_back(vs);
                     }else{
                         delete vl;
@@ -1256,6 +1447,8 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
 
             fvs.kind = stream.ReadByte();
             fvs.closed = stream.ReadByte();
+            fvs.name = stream.ReadString();
+            fvs.id = stream.ReadInt();
             fvs.dataFlags = stream.ReadInt();
             fvs.probe = stream.ReadByte();
 
@@ -1309,6 +1502,8 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
 
     //---
     VectorShape *vs = new VectorShape(fvs.probe, fvs.dataFlags, fvs.parameters);
+    vs->name = fvs.name;
+    vs->id = fvs.id;
 
     if(fvs.kind==jmRECTANGLE){
 
@@ -1318,7 +1513,7 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
         for(FVectorVertex &v : fvs.vertices){
             polyline->vertices.push_back(Vec2f(v.x, v.y));
         }
-        polyline->CalculatePathLength();
+        //polyline->CalculatePathLength();
         polyline->UpdateBoundingBox();
         vs->shape = polyline;
 
@@ -1328,7 +1523,7 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
         for(FVectorVertex &v : fvs.vertices){
             polyline->vertices.push_back(Vec2f(v.x, v.y));
         }
-        polyline->CalculatePathLength();
+        //polyline->CalculatePathLength();
         polyline->UpdateBoundingBox();
         vs->shape = polyline;
 
@@ -1338,7 +1533,7 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
         ellipse->a = fvs.vertices[2].x - fvs.vertices[0].x;   // 0 center, 1 top, 2 right, 3 bottom, 4 left
         ellipse->b = fvs.vertices[3].y - fvs.vertices[0].y;
         if(vectorLayerShape && settings.IsYCoordinateUp()) ellipse->b = -ellipse->b;
-        ellipse->CalculatePathLength();
+        //ellipse->CalculatePathLength();
 
         vs->shape = ellipse;
 
@@ -1348,8 +1543,8 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
         for(FVectorVertex &v : fvs.vertices){
             bezierCurve->vertices.push_back(BezierVertex(Vec2f(v.x, v.y), Vec2f(v.xBPprevious, v.yBPprevious), Vec2f(v.xBPnext, v.yBPnext)));
         }
-        BezierPolycurveToPolyline(bezierCurve->vertices, bezierCurve->polylineVertices);
-        bezierCurve->CalculatePathLength();
+        //BezierPolycurveToPolyline(bezierCurve->vertices, bezierCurve->polylineVertices);
+        //bezierCurve->CalculatePathLength();
 
         vs->shape = bezierCurve;
 
@@ -1373,7 +1568,7 @@ VectorShape* JugiMapBinaryLoader::LoadVectorShape(BinaryStreamReader &stream, in
 FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stream, int size, SourceSprite *ss)
 {
 
-    FrameAnimation *fa = new FrameAnimation();
+    FrameAnimation *fa = new FrameAnimation(ss);
 
 
     int posStart = stream.Pos();
@@ -1394,14 +1589,17 @@ FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stre
         if(signature==SaveSignature::VARIABLES){
 
             fa->name = stream.ReadString();
-            fa->loopCount = stream.ReadInt();
-            fa->loopForever = stream.ReadByte();
-            fa->scaleDuration = stream.ReadFloat();
+            int animationKind = stream.ReadInt();       //not needed
+            fa->bp.startDelay = stream.ReadInt();
+            fa->bp.loopCount = stream.ReadInt();
+            fa->bp.loopForever = stream.ReadByte();
+            fa->bp.repeat = stream.ReadByte();
+            fa->bp.repeat_DelayTimeStart = stream.ReadInt();
+            fa->bp.repeat_DelayTimeEnd = stream.ReadInt();
+            fa->bp.startAtRepeatTime = stream.ReadByte();
+            fa->duration = stream.ReadInt();
             fa->dataFlags = stream.ReadInt();
-            fa->repeatAnimation = stream.ReadByte();
-            fa->repeat_PeriodStart = stream.ReadInt();
-            fa->repeat_PeriodEnd = stream.ReadInt();
-            fa->startAtRepeatTime = stream.ReadByte();
+
 
         }else if(signature==SaveSignature::ANIMATION_FRAMES){
 
@@ -1411,7 +1609,7 @@ FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stre
                 AnimationFrame *af = new AnimationFrame();
                 int indexGraphicItem = stream.ReadInt();
                 if(indexGraphicItem==saveID_DUMMY_EMPTY_FRAME){
-                    af->image = nullptr;
+                    af->texture = nullptr;
 
                 }else{
 
@@ -1421,10 +1619,10 @@ FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stre
                         delete fa;
                         return nullptr;
                     }
-                    af->image = ss->graphicItems[indexGraphicItem];
+                    af->texture = ss->graphicItems[indexGraphicItem];
                 }
 
-                af->duration = stream.ReadInt();
+                af->msTime = stream.ReadInt();
                 af->offset.x = stream.ReadInt();
                 af->offset.y = stream.ReadInt();
                 af->flip.x = stream.ReadInt();
@@ -1434,9 +1632,22 @@ FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stre
                     stream.ReadInt();
                 }
 
+                if(settings.IsYCoordinateUp()){
+                    af->offset.y = - af->offset.y;
+                }
+
                 //---
                 fa->frames.push_back(af);
             }
+
+            // currently 'msTime' is actually 'frame duration'. We convert it to the actual time which is more suitable for animation player
+            int t = 0;
+            for(AnimationFrame* af : fa->frames){
+                int duration = af->msTime;
+                af->msTime = t;
+                t += duration;
+            }
+
 
         }else if(signature==SaveSignature::PARAMETERS){
 
@@ -1464,6 +1675,367 @@ FrameAnimation* JugiMapBinaryLoader::LoadFrameAnimation(BinaryStreamReader &stre
     }
 
     return fa;
+
+}
+
+
+TimelineAnimation* JugiMapBinaryLoader::LoadTimelineAnimation(BinaryStreamReader &stream, int size, SourceSprite *ss)
+{
+
+    TimelineAnimation *ta = new TimelineAnimation(ss);
+
+
+    int posStart = stream.Pos();
+    int sizeCounter = size;
+
+    //---
+    while(sizeCounter>0){
+        int signature = stream.ReadInt();
+        int sizeChunk = stream.ReadInt();
+
+        if(sizeChunk>sizeCounter){
+            error = "LoadTimelineAnimation error! ChunkSize error for signature: " + std::to_string(signature);
+            delete ta;
+            return nullptr;
+        }
+        int posChunk = stream.Pos();
+
+        if(signature==SaveSignature::VARIABLES){
+
+            ta->name = stream.ReadString();
+            int animationKind = stream.ReadInt();       //not needed
+            ta->bp.startDelay = stream.ReadInt();
+            ta->bp.loopCount = stream.ReadInt();
+            ta->bp.loopForever = stream.ReadByte();
+            ta->bp.repeat = stream.ReadByte();
+            ta->bp.repeat_DelayTimeStart = stream.ReadInt();
+            ta->bp.repeat_DelayTimeEnd = stream.ReadInt();
+            ta->bp.startAtRepeatTime = stream.ReadByte();
+            ta->duration = stream.ReadInt();
+            ta->dataFlags = stream.ReadInt();
+
+
+        }else if(signature==SaveSignature::ANIMATION_MEMBERS){
+
+            int nMembers = stream.ReadInt();
+            for(int i=0; i<nMembers; i++){
+
+                AnimationMember *am = new AnimationMember();
+                am->nameID = stream.ReadString();
+                am->disabled = stream.ReadInt();
+
+                int nTracks = stream.ReadInt();
+                for(int t=0; t<nTracks; t++){
+
+                    int signature2 = stream.ReadInt();
+                    int sizeChunk2 = stream.ReadInt();
+                    int posChunk2 = stream.Pos();
+
+                    if(signature2==SaveSignature::ANIMATION_TRACK){
+
+                        AnimationTrack *at = LoadAnimationTrack(stream, sizeChunk2);
+                        if(at){
+                            am->animationTracks.push_back(at);
+                        }else{
+                            error = "LoadTimelineAnimation error! AnimationTrack=nullptr";
+                            delete am;
+                            delete ta;
+                            return nullptr;
+                        }
+
+                    }else{
+                        messages.push_back("LoadTimelineAnimation - ANIMATION_TRACK - unknown signature: " + std::to_string(signature2));
+                        stream.Seek(posChunk2+sizeChunk2);
+                    }
+                }
+
+                ta->animationMembers.push_back(am);
+            }
+
+        }else if(signature==SaveSignature::AK_META_TRACK){
+
+            int signature2 = stream.ReadInt();
+            int sizeChunk2 = stream.ReadInt();
+            int posChunk2 = stream.Pos();
+
+            if(signature2==SaveSignature::ANIMATION_TRACK){
+
+                ta->metaAnimationTrack = LoadAnimationTrack(stream, sizeChunk2);
+                if(ta->metaAnimationTrack==nullptr){
+                    error = "LoadTimelineAnimation error! AnimationTrack=nullptr";
+                    delete ta;
+                    return nullptr;
+                }
+
+            }else{
+                messages.push_back("LoadTimelineAnimation - AK_META_TRACK - unknown signature: " + std::to_string(signature2));
+                stream.Seek(posChunk2+sizeChunk2);
+            }
+
+
+        }else if(signature==SaveSignature::PARAMETERS){
+
+            LoadParameters(stream, ta->parameters);
+
+        }else{
+            messages.push_back("LoadTimelineAnimation - unknown signature: " + std::to_string(signature));
+            stream.Seek(posChunk+sizeChunk);
+        }
+
+        //---
+        int dSize = stream.Pos()-posChunk;
+        if(dSize!=sizeChunk){
+            error = "LoadTimelineAnimation error! Wrong chunkSize for signature:" + std::to_string(signature);
+            delete ta;
+            return nullptr;
+        }
+        sizeCounter-=(dSize+8);   //8 for two integers - 'signature' and 'size'
+    }
+
+    if(stream.Pos()-posStart!=size){
+        error = "LoadTimelineAnimation error! Wrong size: " + std::to_string(stream.Pos()-posStart) + "  saved: " + std::to_string(size);
+        delete ta;
+        return nullptr;
+    }
+
+    return ta;
+
+}
+
+
+Easing::Kind GetEasingKindFromInt(int _kind)
+{
+
+    if(_kind==0){
+        return Easing::Kind::LINEAR;
+
+    }else if(_kind==1){
+        return Easing::Kind::EASE_START;
+
+    }else if(_kind==2){
+        return Easing::Kind::EASE_END;
+
+    }else if(_kind==3){
+        return Easing::Kind::EASE_START_END;
+
+    }else if(_kind==4){
+        return Easing::Kind::CONSTANT;
+
+    }
+
+    return Easing::Kind::LINEAR;
+
+}
+
+
+AnimationTrackKind GetAnimationTrackKindFromInt(int _value)
+{
+
+    if(_value == 0){
+        return AnimationTrackKind::TRANSLATION;
+
+    }else if(_value == 1){
+        return AnimationTrackKind::SCALING;
+
+    }else if(_value == 2){
+        return AnimationTrackKind::ROTATION;
+
+    }else if(_value == 3){
+        return AnimationTrackKind::ALPHA_CHANGE;
+
+    }else if(_value == 4){
+        return AnimationTrackKind::OVERLAY_COLOR_CHANGE;
+
+    }else if(_value == 5){
+        return AnimationTrackKind::PATH_MOVEMENT;
+
+    }else if(_value == 6){
+        return AnimationTrackKind::FRAME_CHANGE;
+
+    }else if(_value == 7){
+        return AnimationTrackKind::FRAME_ANIMATION;
+
+    }else if(_value == 8){
+        return AnimationTrackKind::TIMELINE_ANIMATION;
+
+    }else if(_value == 9){
+        return AnimationTrackKind::FLIP_HIDE;
+
+    }else if(_value == 20){
+        return AnimationTrackKind::META;
+
+    }else{
+        return AnimationTrackKind::NOT_DEFINED;
+
+    }
+
+}
+
+
+AnimationTrack * JugiMapBinaryLoader::LoadAnimationTrack(BinaryStreamReader &stream, int size)
+{
+
+
+    AnimationTrack *at = new AnimationTrack();
+
+
+    int posStart = stream.Pos();
+    int sizeCounter = size;
+
+    //---
+    while(sizeCounter>0){
+        int signature = stream.ReadInt();
+        int sizeChunk = stream.ReadInt();
+
+        if(sizeChunk>sizeCounter){
+            error = "LoadAnimationTrack error! ChunkSize error for signature: " + std::to_string(signature);
+            delete at;
+            return nullptr;
+        }
+        int posChunk = stream.Pos();
+
+        if(signature==SaveSignature::VARIABLES){
+
+            at->disabled = stream.ReadByte();
+            int trackKind = stream.ReadInt();
+            at->kind = GetAnimationTrackKindFromInt(trackKind);
+
+            at->tp.pathNameID = stream.ReadString();
+            int colorBlend = stream.ReadInt();
+            at->tp.colorBlend = GetColorOverlayBlendFromInt(colorBlend);
+            at->tp.reverseDirectionOnClosedShape = stream.ReadByte();
+            at->tp.pathRelDistanceOffset = stream.ReadFloat();
+            at->tp.pathDirectionOrientation = stream.ReadByte();
+
+
+        }else if(signature==SaveSignature::ANIMATION_KEYS){
+
+            int nKeys = stream.ReadInt();
+            for(int i=0; i<nKeys; i++){
+
+                AnimationKey * ak = CreateAnimationKey(at);
+
+                ak->time = stream.ReadInt();
+                int easing = stream.ReadInt();
+                ak->easing.kind = GetEasingKindFromInt(easing);
+
+                if(at->kind==AnimationTrackKind::TRANSLATION){
+                   int sig = stream.ReadInt();
+                   AKTranslation *k = static_cast<AKTranslation*>(ak);
+                   k->position.x = stream.ReadFloat();
+                   k->position.y = stream.ReadFloat();
+                   if(settings.IsYCoordinateUp()){
+                       k->position.y = - k->position.y;
+                   }
+
+                }else if(at->kind==AnimationTrackKind::ROTATION){
+                    int sig = stream.ReadInt();
+                   AKRotation *k = static_cast<AKRotation*>(ak);
+                   k->rotation = stream.ReadFloat();
+                   if(settings.IsYCoordinateUp()){
+                       k->rotation = - k->rotation;
+                   }
+
+                }else if(at->kind==AnimationTrackKind::SCALING){
+                    int sig = stream.ReadInt();
+                    AKScaling *k = static_cast<AKScaling*>(ak);
+                    k->scale.x = stream.ReadFloat();
+                    k->scale.y = stream.ReadFloat();
+
+                }else if(at->kind==AnimationTrackKind::FLIP_HIDE){
+                    int sig = stream.ReadInt();
+                   AKFlipHide *k = static_cast<AKFlipHide*>(ak);
+                   k->flip.x = stream.ReadInt();
+                   k->flip.y = stream.ReadInt();
+                   k->hidden = (bool)stream.ReadByte();
+
+                }else if(at->kind==AnimationTrackKind::ALPHA_CHANGE){
+                    int sig = stream.ReadInt();
+                   AKAlphaChange *k = static_cast<AKAlphaChange*>(ak);
+                   k->alpha = stream.ReadFloat();
+
+                }else if(at->kind==AnimationTrackKind::OVERLAY_COLOR_CHANGE){
+                    int sig = stream.ReadInt();
+                    AKOverlayColorChange *k = static_cast<AKOverlayColorChange*>(ak);
+                    k->color.r = stream.ReadFloat();
+                    k->color.g = stream.ReadFloat();
+                    k->color.b = stream.ReadFloat();
+                    k->color.a = stream.ReadFloat();
+
+                }else if(at->kind==AnimationTrackKind::PATH_MOVEMENT){
+                    int sig = stream.ReadInt();
+                    AKPathMovement *k = static_cast<AKPathMovement*>(ak);
+                    k->relDistance = stream.ReadFloat();;
+
+                }else if(at->kind==AnimationTrackKind::FRAME_CHANGE){
+                    int sig = stream.ReadInt();
+                    AKFrameChange *k = static_cast<AKFrameChange*>(ak);
+                    k->frameImageIndex = stream.ReadInt();
+                    k->animationFrame.offset.x = stream.ReadInt();
+                    k->animationFrame.offset.y = stream.ReadInt();
+                    if(settings.IsYCoordinateUp()){
+                        k->animationFrame.offset.y = - k->animationFrame.offset.y;
+                    }
+                    k->animationFrame.flip.x = stream.ReadInt();
+                    k->animationFrame.flip.y = stream.ReadInt();
+
+                }else if(at->kind==AnimationTrackKind::FRAME_ANIMATION){
+                    int sig = stream.ReadInt();
+                    AKFrameAnimation *k = static_cast<AKFrameAnimation*>(ak);
+                    k->animationName = stream.ReadString();
+                    k->completeLoops = stream.ReadByte();
+                    k->discardAnimationsQueue = stream.ReadByte();
+                    k->fSpeed = stream.ReadFloat();
+
+                }else if(at->kind==AnimationTrackKind::TIMELINE_ANIMATION){
+                    int sig = stream.ReadInt();
+                    AKTimelineAnimation *k = static_cast<AKTimelineAnimation*>(ak);
+                    k->animationName = stream.ReadString();
+                    k->completeLoops = stream.ReadByte();
+                    k->discardAnimationsQueue = stream.ReadByte();
+                    k->fSpeed = stream.ReadFloat();
+
+                }else if(at->kind==AnimationTrackKind::META){
+                    int sig = stream.ReadInt();
+                    AKMeta *k = static_cast<AKMeta*>(ak);
+                    k->label = stream.ReadString();
+                    k->label2 = stream.ReadString();
+                    k->dataFlags = stream.ReadInt();
+
+                    //-----
+                    int signat = stream.ReadInt();
+                    if(signat == SaveSignature::PARAMETERS){
+                        int size = stream.ReadInt();
+                        LoadParameters(stream, k->parameters);
+                    }
+                }
+
+                at->animationKeys.push_back(ak);
+            }
+
+
+        }else{
+            messages.push_back("LoadAnimationTrack - unknown signature: " + std::to_string(signature));
+            stream.Seek(posChunk+sizeChunk);
+        }
+
+        //---
+        int dSize = stream.Pos()-posChunk;
+        if(dSize!=sizeChunk){
+            error = "LoadAnimationTrack error! Wrong chunkSize for signature:" + std::to_string(signature);
+            delete at;
+            return nullptr;
+        }
+        sizeCounter-=(dSize+8);   //8 for two integers - 'signature' and 'size'
+    }
+
+    if(stream.Pos()-posStart!=size){
+        error = "LoadAnimationTrack error! Wrong size: " + std::to_string(stream.Pos()-posStart) + "  saved: " + std::to_string(size);
+        delete at;
+        return nullptr;
+    }
+
+    return at;
 
 }
 

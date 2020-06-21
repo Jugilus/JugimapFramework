@@ -19,6 +19,7 @@ void app::Begin(void)
     //---------------------------------------------------
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(agk::GetVirtualWidth(),agk::GetVirtualHeight()));
+    jugimap::settings.SetZOrderStep(-10);                                       // Z-order step for setting z-order for layers.
     jugimap::objectFactory = new jugimap::ObjectFactoryAGK();                   // All jugimap map elements are created via 'objectFactory' object!
     jugimap::sceneManager = new jugimap::SceneManager();
     jugimap::WorldMapCamera::allowRotation = false;                             // AGK 'view' transformation does not support rotation!

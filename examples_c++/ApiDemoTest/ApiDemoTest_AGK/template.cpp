@@ -14,11 +14,15 @@ void app::Begin(void)
     agk::UseNewDefaultFonts(1);
     agk::SetPrintSize(20);
 
+    //agk::SetVSync(1);
+    //agk::SetSyncRate(60,1);
+
 
     // Set required jugimap global paramaters and objects
     //---------------------------------------------------
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(agk::GetVirtualWidth(),agk::GetVirtualHeight()));
+    jugimap::settings.SetZOrderStep(-10);
     jugimap::objectFactory = new jugimap::ObjectFactoryAGK();                   // All jugimap map elements are created via 'objectFactory' object!
     jugimap::sceneManager = new jugimap::SceneManager();
     jugimap::WorldMapCamera::allowRotation = false;                             // AGK 'view' transformation does not support rotation!

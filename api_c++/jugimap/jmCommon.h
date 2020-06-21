@@ -504,6 +504,37 @@ struct Parameter
 
 
 
+//================================================================================================================================
+
+
+/// \brief The Easing struct defines interpolation methods used for obtaining values between a start value and an end value. It is usually used in
+/// timeline animations.
+class Easing
+{
+public:
+
+    /// \brief The kind of Easing.
+    enum class Kind : int
+    {
+        LINEAR = 0,             ///< Linear transition from the start value to the end value.
+        EASE_START = 1,         ///< Ease-out from the start value (quadratic interpolation).
+        EASE_END = 2,           ///< Ease-in into the end value.
+        EASE_START_END = 3,     ///< Ease-out from the start value and ease-in into the end value.
+        CONSTANT = 4            ///< Constant value; the same as the start value.
+    };
+
+
+    /// Returns an ouput value according to the Easing::Kind. The given parameter **p** must be in range from 0.0 to 1.0.
+    float GetValue(float p);
+
+    //std::string GetKindString();
+    //EasingKind GetKindFromString(const std::string &_kind);
+    //EasingKind GetKindFromInt(int _kind);
+
+    Kind kind = Kind::LINEAR;
+};
+
+
 
 /// @}      //end addtogroup Common
 

@@ -107,12 +107,16 @@ bool AppDelegate::applicationDidFinishLaunching() {
     // set FPS. the default value is 1.0/60 if you don't call this
     director->setAnimationInterval(1.0f / 60);
 
+    //director->setAnimationInterval(1.0f / 170);
+
     // Set the design resolution
     //glview->setDesignResolutionSize(mediumResolutionSize.width, mediumResolutionSize.height, ResolutionPolicy::NO_BORDER);
 
 
     auto frameSize = glview->getFrameSize();
     glview->setDesignResolutionSize(frameSize.width, frameSize.height, ResolutionPolicy::SHOW_ALL);
+
+    //glfwSwapInterval(0);
 
     register_all_packages();
 
@@ -123,6 +127,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
     jugimap::settings.SetScreenSize(jugimap::Vec2i(director->getVisibleSize().width, director->getVisibleSize().height));
     jugimap::settings.SetYCoordinateUp(true);
+    jugimap::settings.SetZOrderStep(10);                                        // Z-order step for setting z-order for layers.
     jugimap::objectFactory = new jugimap::ObjectFactoryCC();                    // all jugimap elements are created via 'objectFactory'
     jugimap::sceneManager = new jugimap::SceneManager();
 

@@ -9,7 +9,7 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(1300, 800), "JugiMap API Demo Test - SFML version");
     window.setKeyRepeatEnabled(false);
-    window.setVerticalSyncEnabled(true);
+    window.setVerticalSyncEnabled(false);
 
 
     //---

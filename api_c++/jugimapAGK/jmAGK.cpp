@@ -215,7 +215,7 @@ void StandardSpriteAGK::UpdateEngineSprite()
 
     if(flags & Property::TRANSFORMATION){
 
-        Vec2f posWorld = GetFullGlobalPosition();
+        Vec2f posWorld = GetGlobalPosition();
         posWorld = posWorld + GetLayer()->GetParallaxOffset();
 
         Vec2f scaleWorld = GetGlobalScale();
@@ -254,6 +254,9 @@ void StandardSpriteAGK::UpdateEngineSprite()
         UpdateColliderAndBoundingBox();
     }
 
+    if(GetSourceSprite()->GetName()=="torch_lighting"){
+        DummyFunction();
+    }
 
     if(flags & Property::APPEARANCE){
 

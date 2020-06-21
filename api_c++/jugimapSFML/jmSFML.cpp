@@ -166,7 +166,7 @@ void StandardSpriteSFML::UpdateEngineSprite()
         }
         if(flags & Property::POSITION){
             posGlobalPrevious = posGlobal;
-            posGlobal = GetFullGlobalPosition();
+            posGlobal = GetGlobalPosition();
             drawChangeFlags |= Property::POSITION;
         }
         if(flags & Property::SCALE){
@@ -222,7 +222,7 @@ void StandardSpriteSFML::UpdateEngineSprite()
 
 void StandardSpriteSFML::CaptureForLerpDrawing()
 {
-    posGlobal = GetFullGlobalPosition();
+    posGlobal = GetGlobalPosition();
     posGlobalPrevious = posGlobal;
 }
 
@@ -506,12 +506,12 @@ void DrawerSFML::EllipseOutline(jugimap::Vec2f c, jugimap::Vec2f r)
 
     float ra = (std::fabs(r.x) + std::fabs(r.y)) / 2;
     float da = std::acos(ra / (ra + 0.125 /1.0)) * 2;
-    int n = std::round(2*pi / da + 0.5);
+    int n = std::round(2*mathPI / da + 0.5);
 
     if(outline.size()<n+1) outline.resize(n+1);
 
     for(int i=0; i<=n; i++){
-        float angle = i * 2*pi/n;
+        float angle = i * 2*mathPI/n;
         float px = c.x + std::cos( angle ) * r.x;
         float py = c.y + std::sin( angle ) * r.y;
         outline[i] =  sf::Vertex (sf::Vector2f(px, py), sfOutlineColor);

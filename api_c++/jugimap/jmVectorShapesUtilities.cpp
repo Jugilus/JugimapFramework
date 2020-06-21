@@ -75,19 +75,7 @@ bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2)
 
     if(gs1->GetKind() != gs2->GetKind()) return false;
 
-    /*
-    if(vs1->GetKind()==JMShapeKind::RECTANGLE){
-        JMRectangleShape *rect1 = static_cast<JMRectangleShape *>(vs1);
-        JMRectangleShape *rect2 = static_cast<JMRectangleShape *>(vs2);
 
-        for(int i=0; i<rect1->vertices.size(); i++){
-            if(AreSameVec2f(rect1->vertices[i], rect2->vertices[i])==false){
-                return false;
-            }
-        }
-
-    }else
-    */
     if(gs1->GetKind()==ShapeKind::POLYLINE){
         PolyLineShape *poly1 = static_cast<PolyLineShape *>(gs1);
         PolyLineShape *poly2 = static_cast<PolyLineShape *>(gs2);
@@ -95,12 +83,11 @@ bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2)
         if(poly1->vertices.size() != poly2->vertices.size()){
             return false;
         }
-        if(poly1->closed != poly2->closed){
+        if(poly1->IsClosed() != poly2->IsClosed()){
             return false;
         }
 
         for(int i=0; i<poly1->vertices.size(); i++){
-            //if(AreSameVec2f(poly1->vertices[i], poly2->vertices[i])==false){
             if(poly1->vertices[i].Equals(poly2->vertices[i])==false){
                 return false;
             }
@@ -114,20 +101,17 @@ bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2)
         if(bezpoly1->vertices.size() != bezpoly2->vertices.size()){
             return false;
         }
-        if(bezpoly1->closed != bezpoly2->closed){
+        if(bezpoly1->IsClosed() != bezpoly2->IsClosed()){
             return false;
         }
 
         for(int i=0; i<bezpoly1->vertices.size(); i++){
-            //if(AreSameVec2f(bezpoly1->vertices[i].P, bezpoly2->vertices[i].P)==false){
             if(bezpoly1->vertices[i].P.Equals(bezpoly2->vertices[i].P)==false){
                 return false;
             }
-            //if(AreSameVec2f(bezpoly1->vertices[i].CPprevious, bezpoly2->vertices[i].CPprevious)==false){
             if(bezpoly1->vertices[i].CPprevious.Equals(bezpoly2->vertices[i].CPprevious)==false){
                 return false;
             }
-            //if(AreSameVec2f(bezpoly1->vertices[i].CPnext, bezpoly2->vertices[i].CPnext)==false){
             if(bezpoly1->vertices[i].CPnext.Equals(bezpoly2->vertices[i].CPnext)==false){
                 return false;
             }
@@ -137,7 +121,6 @@ bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2)
         EllipseShape *ellipse1 = static_cast<EllipseShape *>(gs1);
         EllipseShape *ellipse2 = static_cast<EllipseShape *>(gs2);
 
-        //if(AreSameVec2f(ellipse1->center, ellipse2->center)==false){
         if(ellipse1->center.Equals(ellipse2->center)==false){
             return false;
         }
@@ -151,7 +134,6 @@ bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2)
         SinglePointShape *sp1 = static_cast<SinglePointShape *>(gs1);
         SinglePointShape *sp2 = static_cast<SinglePointShape *>(gs2);
 
-        //if(AreSameVec2f(sp1->point, sp2->point)==false){
         if(sp1->point.Equals(sp2->point)==false){
             return false;
         }
@@ -160,6 +142,7 @@ bool GeometricShapesEqual(GeometricShape * gs1, GeometricShape *gs2)
     return true;
 }
 
+/*
 
 void _AddVertexToPolyline(std::vector<Vec2f>&Vertices, Vec2f v,  float pointsDistanceMin)
 {
@@ -225,6 +208,8 @@ void BezierPolycurveToPolyline(std::vector<BezierVertex>&bezierVertices,  std::v
 
 }
 
+*/
+
 
 void MoveGeometricShape(GeometricShape * gs, Vec2f dPos)
 {
@@ -246,9 +231,9 @@ void MoveGeometricShape(GeometricShape * gs, Vec2f dPos)
             bezpoly->vertices[i].CPprevious = bezpoly->vertices[i].CPprevious + dPos;
             bezpoly->vertices[i].CPnext = bezpoly->vertices[i].CPnext + dPos;
         }
-        for(int i=0; i<bezpoly->polylineVertices.size(); i++){
-            bezpoly->polylineVertices[i] = bezpoly->polylineVertices[i] + dPos;
-        }
+        //for(int i=0; i<bezpoly->polylineVertices.size(); i++){
+        //    bezpoly->polylineVertices[i] = bezpoly->polylineVertices[i] + dPos;
+        //}
 
 
     }else if(gs->GetKind()==ShapeKind::ELLIPSE){
@@ -262,13 +247,20 @@ void MoveGeometricShape(GeometricShape * gs, Vec2f dPos)
         sp->point = sp->point + dPos;
     }
 
+    //---- path
+    for(int i=0; i<gs->GetPath().size(); i++){
+        //gs->GetPathPoints()[i] = gs->GetPathPoints()[i] + dPos;           // NO becouse it clear distance and smooth corner parameters!
+        gs->GetPath()[i].x += dPos.x;
+        gs->GetPath()[i].y += dPos.y;
+    }
+
 }
 
 
 void DrawTransformedGeometricShape(Drawer *drawer, GeometricShape *vs,  AffineMat3f m, float scale)
 {
-    Vec2f v, v1, v2;
 
+    Vec2f v, v1, v2;
 
     if(vs->GetKind()==ShapeKind::POLYLINE){
 
@@ -283,7 +275,7 @@ void DrawTransformedGeometricShape(Drawer *drawer, GeometricShape *vs,  AffineMa
             drawer->Line(v1,v2);
 
         }
-        if(poly->closed){
+        if(poly->IsClosed()){
             v1 = poly->vertices[poly->vertices.size()-1];
             v2 = poly->vertices[0];
 
@@ -295,6 +287,7 @@ void DrawTransformedGeometricShape(Drawer *drawer, GeometricShape *vs,  AffineMa
 
     }else if(vs->GetKind()==ShapeKind::BEZIER_POLYCURVE){
 
+        /*
         BezierShape *bezpoly = static_cast<BezierShape*>(vs);
         for(int i=0; i<bezpoly->polylineVertices.size()-1; i++){
             v1 = bezpoly->polylineVertices[i];
@@ -305,7 +298,7 @@ void DrawTransformedGeometricShape(Drawer *drawer, GeometricShape *vs,  AffineMa
 
             drawer->Line(v1,v2);
         }
-        if(bezpoly->closed){
+        if(bezpoly->IsClosed()){
             v1 = bezpoly->polylineVertices[bezpoly->polylineVertices.size()-1];
             v2 = bezpoly->polylineVertices[0];
 
@@ -314,6 +307,31 @@ void DrawTransformedGeometricShape(Drawer *drawer, GeometricShape *vs,  AffineMa
 
             drawer->Line(v1,v2);
         }
+        */
+
+        //BezierShape *bezpoly = static_cast<BezierShape*>(vs);
+        for(int i=0; i<int(vs->GetPath().size())-1; i++){
+            v1 = vs->GetPath()[i];
+            v2 = vs->GetPath()[i+1];
+
+            v1 = m.Transform(v1);
+            v2 = m.Transform(v2);
+
+            drawer->Line(v1,v2);
+        }
+
+        /*
+        if(bezpoly->IsClosed()){
+            v1 = bezpoly->polylineVertices[bezpoly->polylineVertices.size()-1];
+            v2 = bezpoly->polylineVertices[0];
+
+            v1 = m.Transform(v1);
+            v2 = m.Transform(v2);
+
+            drawer->Line(v1,v2);
+        }
+        */
+
 
     }else if(vs->GetKind()==ShapeKind::ELLIPSE){
 
@@ -340,19 +358,20 @@ void DrawTransformedGeometricShape(Drawer *drawer, GeometricShape *vs,  AffineMa
 void DrawGeometricShape(Drawer* drawer, GeometricShape *vs, jugimap::Vec2f offset)
 {
 
+
     Vec2f v, v1, v2;
 
     if(vs->GetKind()==ShapeKind::POLYLINE){
 
         PolyLineShape *poly = static_cast<PolyLineShape*>(vs);
 
-        for(int i=0; i<poly->vertices.size()-1; i++){
+        for(int i=0; i<int(poly->vertices.size())-1; i++){
             v1 = poly->vertices[i] + offset;
             v2 = poly->vertices[i+1] + offset;
 
             drawer->Line(v1,v2);
         }
-        if(poly->closed){
+        if(poly->IsClosed()){
             v1 = poly->vertices[poly->vertices.size()-1] + offset;
             v2 = poly->vertices[0] + offset;
 
@@ -361,6 +380,15 @@ void DrawGeometricShape(Drawer* drawer, GeometricShape *vs, jugimap::Vec2f offse
 
     }else if(vs->GetKind()==ShapeKind::BEZIER_POLYCURVE){
 
+
+        for(int i=0; i<int(vs->GetPath().size())-1; i++){
+            v1 = vs->GetPath()[i] + offset;
+            v2 = vs->GetPath()[i+1] + offset;
+
+            drawer->Line(v1,v2);
+        }
+
+        /*
         BezierShape *bezpoly = static_cast<BezierShape*>(vs);
 
         for(int i=0; i<bezpoly->polylineVertices.size()-1; i++){
@@ -369,12 +397,13 @@ void DrawGeometricShape(Drawer* drawer, GeometricShape *vs, jugimap::Vec2f offse
 
             drawer->Line(v1,v2);
         }
-        if(bezpoly->closed){
+        if(bezpoly->IsClosed()){
             v1 = bezpoly->polylineVertices[bezpoly->polylineVertices.size()-1] + offset;;
             v2 = bezpoly->polylineVertices[0] + offset;;
 
             drawer->Line(v1,v2);
         }
+        */
 
 
     }else if(vs->GetKind()==ShapeKind::ELLIPSE){
@@ -392,6 +421,7 @@ void DrawGeometricShape(Drawer* drawer, GeometricShape *vs, jugimap::Vec2f offse
     }
 
 }
+
 
 
 

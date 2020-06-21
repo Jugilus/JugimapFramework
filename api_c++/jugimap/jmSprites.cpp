@@ -4,6 +4,7 @@
 #include "jmVectorShapes.h"
 #include "jmUtilities.h"
 #include "jmFrameAnimation.h"
+#include "jmAnimationCommon.h"
 #include "jmMapBinaryLoader.h"
 #include "jmCollision.h"
 #include "jmMap.h"
@@ -18,6 +19,15 @@ namespace jugimap {
 
 
 
+Sprite::~Sprite()
+{
+
+    if(ap){
+        delete ap;
+    }
+
+}
+
 
 Sprite* Sprite::MakePassiveCopy()
 {
@@ -28,7 +38,9 @@ Sprite* Sprite::MakePassiveCopy()
     s->parentComposedSprite = parentComposedSprite;
     s->CopyProperties(this, Property::ALL);
     if(GetKind()==SpriteKind::COMPOSED){
-        ComposedSprite::CopyLayers(static_cast<ComposedSprite*>(this), static_cast<ComposedSprite*>(s), nullptr);
+        //ComposedSprite::CopyLayers(static_cast<ComposedSprite*>(this), static_cast<ComposedSprite*>(s), nullptr);
+        int zOrder = s->layer->GetZOrder();
+        ComposedSprite::CopyLayers(static_cast<ComposedSprite*>(this), static_cast<ComposedSprite*>(s), zOrder);
     }
 
     return s;
@@ -57,7 +69,6 @@ void Sprite::CopyProperties(Sprite *_sprite, int copyFlags)
 
     if(copyFlags & Property::POSITION){
         position = _sprite->position;
-        animationFrameOffset = _sprite->animationFrameOffset;
     }
 
     if(copyFlags & Property::SCALE){
@@ -90,13 +101,18 @@ void Sprite::CopyProperties(Sprite *_sprite, int copyFlags)
         colorOverlayBlend = _sprite->colorOverlayBlend;
     }
 
-    if(copyFlags & Property::DATA){
-        parameters = _sprite->parameters;
-        dataFlags = _sprite->dataFlags;
+    if(copyFlags & Property::ID){
+        name = _sprite->name;
+        id = _sprite->id;
     }
 
     if(copyFlags & Property::TAG){
         tag = _sprite->tag;
+    }
+
+    if(copyFlags & Property::DATA){
+        parameters = _sprite->parameters;
+        dataFlags = _sprite->dataFlags;
     }
 
     if(copyFlags & Property::LINK){
@@ -106,6 +122,9 @@ void Sprite::CopyProperties(Sprite *_sprite, int copyFlags)
 
     changeFlags |= copyFlags;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -121,6 +140,9 @@ void Sprite::SetPosition(Vec2f _position)
     position = _position;
     changeFlags |= Property::POSITION;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -129,6 +151,9 @@ void Sprite::SetScale(Vec2f _scale)
     scale = _scale;
     changeFlags |= Property::SCALE;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -137,6 +162,9 @@ void Sprite::SetRotation(float _rotation)
     rotation = _rotation;
     changeFlags |= Property::ROTATION;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -145,6 +173,9 @@ void Sprite::SetFlip(Vec2i _flip)
     flip = _flip;
     changeFlags |= Property::FLIP;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -153,14 +184,9 @@ void Sprite::SetHandle(Vec2f _handle)
     handle = _handle;
     changeFlags |= Property::HANDLE;
     layer->SetSpritesChanged(true);
-}
-
-
-void Sprite::SetAnimationFrameOffset(Vec2f _frameOffset)
-{
-    animationFrameOffset = _frameOffset;
-    changeFlags |= Property::POSITION;
-    layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -169,6 +195,9 @@ void Sprite::SetAlpha(float _alpha)
     alpha = _alpha;
     changeFlags |= Property::ALPHA;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -177,6 +206,9 @@ void Sprite::SetOwnBlend(Blend _blend)
     ownBlend = _blend;
     changeFlags |= Property::BLEND;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -185,6 +217,9 @@ void Sprite::SetColorOverlayActive(bool _colorOverlayActive)
     colorOverlayActive = _colorOverlayActive;
     changeFlags |= Property::OVERLAY_COLOR;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -193,6 +228,9 @@ void Sprite::SetColorOverlayRGBA(ColorRGBA _colorOverlayRGBA)
     colorOverlayRGBA = _colorOverlayRGBA;
     changeFlags |= Property::OVERLAY_COLOR;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -201,6 +239,9 @@ void Sprite::SetColorOverlayBlend(ColorOverlayBlend _colorOverlayBlend)
     colorOverlayBlend = _colorOverlayBlend;
     changeFlags |= Property::OVERLAY_COLOR;
     layer->SetSpritesChanged(true);
+    if(parentComposedSprite){
+        parentComposedSprite->SetChildrenSpritesChanged(true);
+    }
 }
 
 
@@ -209,6 +250,9 @@ void Sprite::SetChangeFlags(int _changeFlags)
     changeFlags = _changeFlags;
     if(changeFlags !=0){
         layer->SetSpritesChanged(true);
+        if(parentComposedSprite){
+            parentComposedSprite->SetChildrenSpritesChanged(true);
+        }
     }
 }
 
@@ -218,38 +262,250 @@ void Sprite::AppendToChangeFlags(int _changeFlags)
     changeFlags |= _changeFlags;
     if(changeFlags !=0 ){
         layer->SetSpritesChanged(true);
+        if(parentComposedSprite){
+            parentComposedSprite->SetChildrenSpritesChanged(true);
+        }
     }
 }
 
 
-Vec2f Sprite::GetGlobalPosition()
+
+Vec2f Sprite::GetPosition(bool _includeAnimatedProperties)
 {
+
+    if(_includeAnimatedProperties && ap){
+        return position + ap->translation;
+    }
+    return position;
+
+}
+
+/*
+Vec2f Sprite::GetFullPosition()
+{
+    if(ap){
+        return position+ap->translation;
+    }
+
+}
+*/
+
+
+Vec2f Sprite::GetGlobalPosition(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldPos(position+ap->translation) : position+ap->translation;
+    }
+
     return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldPos(position) : position;
 }
 
 
+/*
 Vec2f Sprite::GetFullGlobalPosition()
 {
-    return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldPos(position+animationFrameOffset) : position+animationFrameOffset;
+    if(ap){
+        return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldPos(position+ap->translation) : position+ap->translation;
+    }
+
+    return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldPos(position) : position;
+}
+*/
+
+
+//-----
+
+
+Vec2f Sprite::GetScale(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        return scale * ap->scale;
+    }
+    return scale;
 }
 
 
-Vec2f Sprite::GetGlobalScale()
+/*
+Vec2f Sprite::GetScale()
 {
+    if(ap){
+        return scale * ap->scale;
+    }
+    return scale;
+}
+*/
+
+/*
+Vec2f Sprite::GetlScaleWithAni()
+{
+    if(ap){
+        return scale * ap->scale;
+    }
+    return scale;
+}
+*/
+
+
+Vec2f Sprite::GetGlobalScale(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldScale(scale*ap->scale) : scale*ap->scale;
+    }
     return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldScale(scale) : scale;
 }
 
 
+/*
+Vec2f Sprite::GetGlobalScaleWithAni()
+{
+    if(ap){
+        return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldScale(scale*ap->scale) : scale*ap->scale;
+    }
+    return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldScale(scale) : scale;
+}
+*/
+
+//-----
+
+
+float Sprite::GetRotation(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        return rotation + ap->rotation;
+    }
+    return rotation;
+}
+
+/*
 float Sprite::GetGlobalRotation()
 {
     return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldRotation(rotation) : rotation;
 }
+*/
 
 
+float Sprite::GetGlobalRotation(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldRotation(rotation + ap->rotation) : rotation + ap->rotation;
+    }
+    return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldRotation(rotation) : rotation;
+}
+
+
+//-----
+
+
+Vec2i Sprite::GetFlip(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        Vec2i f = flip;
+        if(ap->flip.x) f.x = 1 - f.x;
+        if(ap->flip.y) f.y = 1 - f.y;
+        return f;
+
+    }
+    return flip;
+}
+
+/*
 Vec2i Sprite::GetGlobalFlip()
 {
     return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldFlip(flip) : flip;
 }
+
+*/
+
+Vec2i Sprite::GetGlobalFlip(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        Vec2i f = flip;
+        if(ap->flip.x) f.x = 1 - f.x;
+        if(ap->flip.y) f.y = 1 - f.y;
+        return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldFlip(f) : f;
+    }
+
+    return (parentComposedSprite!=nullptr)? parentComposedSprite->ConvertToWorldFlip(flip) : flip;
+}
+
+
+//-----
+
+float Sprite::GetAlpha(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap){
+        return alpha * ap->alpha;
+    }
+    return alpha;
+}
+
+
+//-----
+
+
+bool Sprite::IsOverlayColorActive()
+{
+
+    if(ap && ap->changeFlags & Property::OVERLAY_COLOR){
+        return true;
+    }
+    return colorOverlayActive;
+}
+
+
+
+ColorRGBA Sprite::GetOverlayColorRGBA(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap && ap->changeFlags & Property::OVERLAY_COLOR){
+        return ap->colorOverlayRGBA;
+    }
+    return colorOverlayRGBA;
+}
+
+
+ColorOverlayBlend Sprite::GetOverlayColorBlend(bool _includeAnimatedProperties)
+{
+    if(_includeAnimatedProperties && ap && ap->changeFlags & Property::OVERLAY_COLOR){
+        return ap->colorOverlayBlend;
+    }
+    return colorOverlayBlend;
+}
+
+
+
+void Sprite::CreateAnimatedPropertiesIfNone()
+{
+
+    if(ap==nullptr){
+        ap = new AnimatedProperties();
+    }
+
+}
+
+
+void Sprite::ResetAnimatedProperties()
+{
+
+    if(ap){
+        ap->Reset();
+    }
+
+}
+
+
+void Sprite::AppendAnimatedProperties(AnimatedProperties& _ap)
+{
+
+    ap->Append(_ap);
+    AppendToChangeFlags(_ap.changeFlags);
+
+    //if(sourceSprite->GetName()=="rotatorA"){
+    //    DbgOutput("SetAnimatedProperties _ap pos x:" + std::to_string(_ap.translation.x)+" y:" + std::to_string(_ap.translation.y));
+    //    DbgOutput("SetAnimatedProperties rotatorA pos x:" + std::to_string(GetGlobalPosition().x)+" y:" + std::to_string(GetGlobalPosition().y));
+
+    //}
+}
+
 
 
 //=======================================================================================
@@ -295,14 +551,13 @@ void StandardSprite::SetActiveImage(GraphicItem *_image)
 {
     activeImage = _image;
     if(activeImage){
-        if(GetHandle().Equals(activeImage->GetHandle())==false){
+        //if(GetHandle().Equals(activeImage->GetHandle())==false){
             SetHandle(activeImage->handle);
-        }
+        //}
     }
     UpdateBoundingBox();
     //changeFlags = Flags::ALL;
 }
-
 
 
 void StandardSprite::SetColliderShapes()
@@ -413,13 +668,32 @@ bool StandardSprite::RaycastHit(Vec2f _rayStart, Vec2f _rayEnd, Vec2f &_hitPos)
 }
 
 
+void StandardSprite::AppendAnimatedProperties(AnimatedProperties &_ap)
+{
+
+
+    Sprite::AppendAnimatedProperties(_ap);
+
+    if(_ap.changeFlags & Property::TEXTURE){
+        if(activeImage !=_ap.graphicItem){
+            SetActiveImage(_ap.graphicItem);
+        }
+    }
+
+    //if(GetNameID()=="batTest" && _ap.changeFlags & Property::TEXTURE){
+        //DbgOutput("spiderA texture:" + GetActiveImage()->GetName());
+    //    DbgOutput("batTest texture:"+ GetActiveImage()->GetName() + "  pos x:" + std::to_string(_ap.translation.x)+" y:"+ std::to_string(_ap.translation.y));
+
+    //}
+
+}
+
+
 //=======================================================================================
 
 
-void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest, JugiMapBinaryLoader* loader)
+void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest, int &zOrder)
 {
-
-    int countLayers = 0;
 
     //--- SPRITE LAYERS
     for(Layer *l : csSource->layers){
@@ -429,7 +703,6 @@ void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest
             SpriteLayer * sl = static_cast<SpriteLayer*>(l);
 
             SpriteLayer *lCopy = objectFactory->NewSpriteLayer();
-            //lCopy->map = csDest->map;                   // Using csDest because csSource can be SourceComposedSprite where the map is null.
             lCopy->map = csDest->layer->map;                // Using csDest because csSource can be SourceComposedSprite where the map is null.
             lCopy->parentComposedSprite = csDest;
             lCopy->kind = sl->kind;
@@ -437,17 +710,10 @@ void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest
             lCopy->parameters = sl->parameters;
 
             //--- set depth when building
-            if(loader){
+            lCopy->zOrder = zOrder;
+            zOrder += settings.GetZOrderStep();
 
-                lCopy->zOrder = csDest->GetLayer()->GetZOrder() + countLayers * loader->zOrderCounterStep;
-                if(lCopy->zOrder <= loader->zOrderCounter){
-                    loader->zOrderCounter = lCopy->zOrder + loader->zOrderCounterStep;
-                }
-                countLayers++;
-
-            }else{
-                lCopy->zOrder = l->zOrder;
-            }
+            //DbgOutput("CS Layer:"+lCopy->GetName() + " zOrder:" + std::to_string(lCopy->zOrder));
 
             //----
             for(Sprite *s : sl->sprites){
@@ -459,10 +725,9 @@ void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest
                 sCopy->parentComposedSprite = lCopy->parentComposedSprite;
                 sCopy->CopyProperties(s, Property::ALL);
                 if(s->GetKind()==SpriteKind::COMPOSED){
-                    CopyLayers(static_cast<ComposedSprite*>(s), static_cast<ComposedSprite*>(sCopy), loader);
+                    CopyLayers(static_cast<ComposedSprite*>(s), static_cast<ComposedSprite*>(sCopy), zOrder);
                 }
                 lCopy->sprites.push_back(sCopy);
-
             }
 
             csDest->layers.push_back(lCopy);
@@ -476,6 +741,10 @@ void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest
             vlCopy->kind = vl->kind;
             vlCopy->name = vl->name;
             vlCopy->parameters = vl->parameters;
+
+            vlCopy->zOrder = zOrder;
+            zOrder += settings.GetZOrderStep();
+
 
             for(VectorShape *vs : vl->GetVectorShapes()){
                 VectorShape *vsCopy = new VectorShape(*vs);
@@ -493,6 +762,9 @@ void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest
             tlCopy->kind = tl->kind;
             tlCopy->parameters = tl->parameters;
 
+            tlCopy->zOrder = zOrder;
+            zOrder += settings.GetZOrderStep();
+
             for(Text *t : tl->GetTexts()){
                 Text* tCopy = objectFactory->NewText(tlCopy, t->GetFont(), t->GetTextString(), t->GetPosition(), t->GetColor());
                 tCopy->SetAlpha(t->GetAlpha());
@@ -500,10 +772,6 @@ void ComposedSprite::CopyLayers(ComposedSprite *csSource, ComposedSprite *csDest
             csDest->layers.push_back(tlCopy);
 
         }
-
-
-
-
     }
 
 }
@@ -524,7 +792,11 @@ void ComposedSprite::InitEngineSprite()
     UpdateTransform();
     visible = true;
     changeFlags = Property::ALL;
+    childrenSpritesChanged = true;
 
+    if(sourceSprite->name=="rotatorA"){
+        DummyFunction();
+    }
 
     for(Layer *l : layers){
         l->InitEngineLayer();
@@ -535,21 +807,26 @@ void ComposedSprite::InitEngineSprite()
 void ComposedSprite::UpdateEngineSprite()
 {
     if(visible==false) return;
-    if(changeFlags==0) return;
 
-    UpdateTransform();
+    if(changeFlags!=0){
+        UpdateTransform();
+    }
 
-    for(Layer *l : layers){
-        if(l->GetKind()==LayerKind::SPRITE){
-            SpriteLayer * sl = static_cast<SpriteLayer*>(l);
-            for(Sprite *s : sl->GetSprites()){
-                s->SetChangeFlags(s->GetChangeFlags() | changeFlags);
-                s->UpdateEngineSprite();
+    if(childrenSpritesChanged || changeFlags!=0){
+        for(Layer *l : layers){
+            if(l->GetKind()==LayerKind::SPRITE){
+                SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+                for(Sprite *s : sl->GetSprites()){
+                    s->SetChangeFlags(s->GetChangeFlags() | changeFlags);
+                    s->UpdateEngineSprite();
+                }
             }
         }
     }
 
     SetChangeFlags(0);
+    childrenSpritesChanged = false;
+
 }
 
 
@@ -693,23 +970,46 @@ void ComposedSprite::CaptureForLerpDrawing()
 }
 
 
+void ComposedSprite::ResetAnimatedProperties()
+{
+
+    Sprite::ResetAnimatedProperties();
+
+    for(Layer *l : GetLayers()){
+        if(l->GetKind()==LayerKind::SPRITE){
+            SpriteLayer * sl = static_cast<SpriteLayer*>(l);
+            for(Sprite *s : sl->GetSprites()){
+                s->ResetAnimatedProperties();
+            }
+        }
+    }
+
+}
+
 
 void ComposedSprite::UpdateTransform()
 {
 
+    Vec2f realPosition = GetPosition();
+    Vec2f realScale = GetScale();
+    float realRotation = GetRotation();
+    Vec2i realFlip = GetFlip();
+    Vec2f handle = GetHandle();
+
+
     if(changeFlags == Property::POSITION){    // changed only position
 
-        cTransform = MakeTransformationMatrix(position+GetLayer()->GetParallaxOffset(), scale, flip, rotation, handle);
+        cTransform = MakeTransformationMatrix(realPosition+GetLayer()->GetParallaxOffset(), realScale, realFlip, realRotation, handle);
         if(parentComposedSprite){
             cTransform = parentComposedSprite->cTransform * cTransform;
         }
         return;
     }
 
-    cTransform = MakeTransformationMatrix(position+GetLayer()->GetParallaxOffset(), scale, flip, rotation, handle);
-    cFlip = flip;
-    cScale = scale.x;      // composed sprites have uniform scale !
-    cRotation = rotation;
+    cTransform = MakeTransformationMatrix(position+GetLayer()->GetParallaxOffset(), realScale, realFlip, realRotation, handle);
+    cFlip = realFlip;
+    cScale = realScale.x;      // composed sprites have uniform scale !
+    cRotation = realRotation;
 
     //---
     if(parentComposedSprite){
@@ -717,9 +1017,9 @@ void ComposedSprite::UpdateTransform()
         cScale *= parentComposedSprite->cScale;
 
         if(parentComposedSprite->cFlip.y + parentComposedSprite->cFlip.x == 1){     // one and only one flip changes rotation sign
-            cRotation = parentComposedSprite->cRotation - rotation;
+            cRotation = parentComposedSprite->cRotation - realRotation;
         }else{
-            cRotation = parentComposedSprite->cRotation + rotation;
+            cRotation = parentComposedSprite->cRotation + realRotation;
         }
 
 
@@ -737,6 +1037,7 @@ void ComposedSprite::UpdateTransform()
     }
 
 }
+
 
 
 //==========================================================================================================

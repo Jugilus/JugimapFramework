@@ -93,6 +93,16 @@ void StandardSpriteCC::InitEngineSprite()
 
     GetSourceSprite()->Init();
 
+    if(GetSourceSprite()->GetName()=="rotatatorA_blade"){
+        DummyFunction();
+    }else if(GetSourceSprite()->GetName()=="rotatatorA_disc"){
+        DummyFunction();
+    }else if(GetSourceSprite()->GetName()=="rotatatorA_faceA"){
+        DummyFunction();
+    }else if(GetSourceSprite()->GetName()=="rotatatorA_eyes"){
+        DummyFunction();
+    }
+
     //---
     ccSprite = cocos2d::Sprite::create();
     ccSprite->setOpacityModifyRGB(true);
@@ -297,10 +307,14 @@ void StandardSpriteCC::UpdateEngineSprite()
 
     int flags = GetChangeFlags();
 
+    //if(GetSourceSprite()->GetName()=="symbolA" && GetAlpha()>0.5){
+    //        DummyFunction();
+    //}
+
 
     if(flags & Property::TRANSFORMATION){
 
-        Vec2f posGlobal = GetFullGlobalPosition();
+        Vec2f posGlobal = GetGlobalPosition();
         posGlobal += GetLayer()->GetParallaxOffset();
 
         Vec2f scaleGlobal = GetGlobalScale();
@@ -330,16 +344,22 @@ void StandardSpriteCC::UpdateEngineSprite()
         UpdateColliderAndBoundingBox();
     }
 
+    if(GetNameID()=="testbat"){
+        DummyFunction();
+    }
 
     if(flags & Property::APPEARANCE){
+
 
         if(flags & Property::OVERLAY_COLOR){
             ManageShaders_OverlayColor();
         }
 
+
         if(flags & Property::ALPHA){
-            ccSprite->setOpacity(GetAlpha()*GetLayer()->GetAlpha()*255);
+            ccSprite->setOpacity(GetAlpha() * GetLayer()->GetAlpha()*255);
         }
+
 
         if(flags & Property::BLEND){
             Blend blend = GetOwnBlend();
@@ -362,6 +382,7 @@ void StandardSpriteCC::UpdateEngineSprite()
                 ccSprite->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
             }
         }
+
     }
 
     //---
@@ -574,7 +595,7 @@ void DrawerCC::EllipseOutline(Vec2f c, Vec2f r)
 
     float ra = (std::fabs(r.x) + std::fabs(r.y)) / 2;
     float da = std::acos(ra / (ra + 0.125 /1.0)) * 2;
-    int n = std::round(2*pi / da + 0.5);
+    int n = std::round(2*mathPI / da + 0.5);
 
     //if(outline.size()<n+1) outline.resize(n+1);
 
@@ -582,7 +603,7 @@ void DrawerCC::EllipseOutline(Vec2f c, Vec2f r)
     float pyPrev = c.y + std::sin(0) * r.y;
 
     for(int i=1; i<=n; i++){
-        float angle = i * 2*pi/n;
+        float angle = i * 2*mathPI/n;
         float px = c.x + std::cos( angle ) * r.x;
         float py = c.y + std::sin( angle ) * r.y;
         //outline[i] =  cocos2d::Vec2(px, py);
