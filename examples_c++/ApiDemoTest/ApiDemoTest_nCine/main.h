@@ -18,11 +18,11 @@ class MyEventHandler : public ncine::IAppEventHandler, public ncine::IInputEvent
 
 
 
-//#ifdef __ANDROID__
+#ifdef __ANDROID__
     void onTouchDown(const ncine::TouchEvent &event) override;
     void onTouchUp(const ncine::TouchEvent &event) override;
     void onTouchMove(const ncine::TouchEvent &event) override;
-//#endif
+#endif
     void onMouseButtonPressed(const ncine::MouseEvent &event) override;
     void onMouseButtonReleased(const ncine::MouseEvent &event) override;
     void onMouseMoved(const ncine::MouseState &state) override;
