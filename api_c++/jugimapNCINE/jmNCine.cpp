@@ -96,13 +96,13 @@ void StandardSpriteNC::SetActiveImage(GraphicItem *_image)
     //----
     GraphicItem *image = GetActiveImage();
     if(image==nullptr){                                     // image can also be nullptr!
-        if(ncSprite->drawEnabled()){
+        if(ncSprite->isDrawEnabled()){
             ncSprite->setDrawEnabled(false);
         }
         return;
 
     }else{
-        if(ncSprite->drawEnabled()==false && IsVisible()){
+        if(ncSprite->isDrawEnabled()==false && IsVisible()){
             ncSprite->setDrawEnabled(true);
         }
     }
