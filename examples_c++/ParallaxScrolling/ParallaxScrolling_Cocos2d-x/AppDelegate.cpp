@@ -23,7 +23,9 @@
  ****************************************************************************/
 
 #include "AppDelegate.h"
-#include "sceneCOCOS2D-X.h"
+#include "jugimapCOCOS2D-X/jmCocos2d-x.h"
+#include "jugiApp/app.h"
+
 
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
@@ -62,12 +64,19 @@ AppDelegate::~AppDelegate()
 #endif
 
 
+    jugimap::settings.SetAppTerminated(true);
+
     //apiTestDemo::entities.Delete();
     jugimap::shaders::DeleteShaders();
-    jugimap::sceneManager->DeleteScenes();
+    //jugimap::sceneManager->DeleteScenes();
+    delete jugiApp::application;
     jugimap::DeleteGlobalObjects();
 
 }
+
+
+
+
 
 // if you want a different context, modify the value of glContextAttrs
 // it will affect all platforms
@@ -94,7 +103,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     if(!glview) {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
 
-        glview = GLViewImpl::createWithRect("JugiMap Parallax Scrolling - Cocos2d-x version", cocos2d::Rect(0, 0, mediumResolutionSize.width, mediumResolutionSize.height));
+        glview = GLViewImpl::createWithRect(jugiApp::jugimapAppName + " - Cocos2d-x version", cocos2d::Rect(0, 0, mediumResolutionSize.width, mediumResolutionSize.height));
 #else
         glview = GLViewImpl::create("HelloCpp");
 #endif
@@ -118,59 +127,34 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
 
 
-    // Set required jugimap global paramaters and objects
+    // JUGIMAP CORE INITIALIZATION
     //---------------------------------------------------
-
+    jugimap::settings.SetEngine(jugimap::Engine::Cocos2Dx);
     jugimap::settings.SetScreenSize(jugimap::Vec2i(director->getVisibleSize().width, director->getVisibleSize().height));
-    jugimap::settings.SetZOrderStep(10);                                        // Z-order step for setting z-order for layers.
     jugimap::settings.SetYCoordinateUp(true);
-    jugimap::objectFactory = new jugimap::ObjectFactoryCC();                    // all jugimap elements are created via 'objectFactory'
-    jugimap::sceneManager = new jugimap::SceneManager();
+    jugimap::objectFactory = new jugimap::ObjectFactoryCC();
 
     // path prefixes
-    //jugimap::JugiMapBinaryLoader::pathPrefix = "Resources/";        // The map loader is not part of cocos2d loaders so we need to add prefix
-    //jugimap::GraphicFile::pathPrefix = "";                        // No prefix as cocos2d loaders use prefix in their loaders
-    //jugimap::Font::pathPrefix = "";                               // No prefix as cocos2d loaders use prefix in their loaders
+    //jugimap::JugiMapBinaryLoader::pathPrefix = "";                // No prefix as cocos2d loaders add 'Resources' prefix automatically
+    //jugimap::GraphicFile::pathPrefix = "";                        // No prefix as cocos2d loaders add 'Resources' prefix automatically
+    //jugimap::Font::pathPrefix = "";                               // No prefix as cocos2d loaders add 'Resources' prefix automatically
+    //jugimap::TextLibrary::pathPrefix = "";                        // No prefix as cocos2d loaders add 'Resources' prefix automatically
 
-    // Load shaders required for some jugimap sprite properties
-    jugimap::shaders::glpColorOverlay_blendSimpleMultiply = cocos2d::GLProgram::createWithFilenames("media/shaders_COCOS2D-X/spriteCommon.vert", "media/shaders_COCOS2D-X/spriteColorOverlay.frag", "SIMPLE_MULTIPLY_BLEND");
-    if(jugimap::shaders::glpColorOverlay_blendSimpleMultiply){
-        jugimap::shaders::glpColorOverlay_blendSimpleMultiply->retain();
-    }
-    jugimap::shaders::glpColorOverlay_blendNormal = cocos2d::GLProgram::createWithFilenames("media/shaders_COCOS2D-X/spriteCommon.vert", "media/shaders_COCOS2D-X/spriteColorOverlay.frag", "NORMAL_PIXEL_BLEND");
-    if(jugimap::shaders::glpColorOverlay_blendNormal){
-        jugimap::shaders::glpColorOverlay_blendNormal->retain();
-    }
-    jugimap::shaders::glpColorOverlay_blendMultiply = cocos2d::GLProgram::createWithFilenames("media/shaders_COCOS2D-X/spriteCommon.vert", "media/shaders_COCOS2D-X/spriteColorOverlay.frag", "MULTIPLY_PIXEL_BLEND");
-    if(jugimap::shaders::glpColorOverlay_blendMultiply){
-        jugimap::shaders::glpColorOverlay_blendMultiply->retain();
-    }
-    jugimap::shaders::glpColorOverlay_blendLinearDodge = cocos2d::GLProgram::createWithFilenames("media/shaders_COCOS2D-X/spriteCommon.vert", "media/shaders_COCOS2D-X/spriteColorOverlay.frag", "LINEAR_DODGE_PIXEL_BLEND");
-    if(jugimap::shaders::glpColorOverlay_blendLinearDodge){
-        jugimap::shaders::glpColorOverlay_blendLinearDodge->retain();
-    }
-    jugimap::shaders::glpColorOverlay_blendColor = cocos2d::GLProgram::createWithFilenames("media/shaders_COCOS2D-X/spriteCommon.vert", "media/shaders_COCOS2D-X/spriteColorOverlay.frag", "COLOR_PIXEL_BLEND");
-    if(jugimap::shaders::glpColorOverlay_blendColor){
-        jugimap::shaders::glpColorOverlay_blendColor->retain();
-    }
+    // path where text files are stored
+    jugimap::TextLibrary::path = "media/texts/";
 
-    assert(jugimap::shaders::glpColorOverlay_blendSimpleMultiply!=nullptr);
-    assert(jugimap::shaders::glpColorOverlay_blendNormal!=nullptr);
-    assert(jugimap::shaders::glpColorOverlay_blendMultiply!=nullptr);
-    assert(jugimap::shaders::glpColorOverlay_blendLinearDodge!=nullptr);
-    assert(jugimap::shaders::glpColorOverlay_blendColor!=nullptr);
+    // shaders
+    jugimap::shaders::LoadJugimapShaders();
 
+    //---
+    jugiApp::application = new jugiApp::DemoApp();
+    jugiApp::application->Init();
 
-    //---------------------------------------------------
-
-    jugimap::Scene* scene = jugimap::sceneManager->AddScene(new ParallaxSceneCC());
-    jugimap::sceneManager->SetCurrentScene(scene);
-
-    if(scene->GetEngineSceneLink()==nullptr) return false;
-    jugimap::SceneCCNode* sceneNode = static_cast<jugimap::SceneCCNode*>(scene->GetEngineSceneLink());
+    jugimap::EngineAppCC *engineAppCC =  static_cast<jugimap::EngineAppCC*>(jugiApp::application->GetEngineApp());
+    jugimap::AppCCNode * appCCNode = static_cast<jugimap::AppCCNode*>(engineAppCC->GetAppNode());
 
     // run
-    director->runWithScene(sceneNode);
+    director->runWithScene(appCCNode);
 
     return true;
 }

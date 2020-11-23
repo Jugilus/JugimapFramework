@@ -1,0 +1,72 @@
+>buttonColors:#FFF04F,#FF9E4F
+>defColor:0
+>defFont:1
+>defIndent:25
+>defTabSpacing:30
+
+>id:0 
+Jugimap framework includes a text system which allow simple handling of game texts.
+Texts are read from plain text files and parsed via markup codes into separate chunks of text called <font:2> text segments. <defFont> A text segment can have an arbitrary number of words. In example, this entire text is one text segment.
+<verSpacing:20>
+<indent:0>
+Main features of the text segment:
+<offset:30>
+- <font:3> Styling <defFont>
+   Change the <color:#85FF4F> text color, <defColor> <font:2> font, <defFont> line offset and spacing.
+- <font:3> Custom parameters <defFont>
+   Add metadata about text segments.
+- <font:3> Text buttons <defFont>
+  Turn parts of the text into buttons. An example: <button:setTextInputString> Change the text of the <font:2> text input <defFont> widget bellow to 'button clicked'. </button>
+<offset:0>
+<verSpacing:20>
+<defIndent>
+Text segments are displayed on screen in <font:2> text field <defFont> widgets. These widgets provide different styles of displaying text - check out the options on the right.
+
+>defIndent:0
+
+>id:1
+Replace this <color:2> word <defColor> with the input string. 
+
+// ************* SEQUENCES *************
+>defColor:#282522
+
+>seqId:0 [dialog:Conan_Jasmina] 
+//-----------------------------------------------------------------------
+>add [character:Conan]
+The tribes build their villages as far from the Yimsha mountain as they can.
+
+>add [character:Yasmina]
+Yimsha, the mountain of the Black Seers!
+
+>add [character:Conan]
+So they say.
+This is as near as I ever approached it. I have swung north to avoid any Kshatriya troops that might be prowling through the hills. The regular trail from Khurum to Afghulistan lies farther south. This is an ancient one, and seldom used.
+
+>add [character:Yasmina]
+How long would it take to reach Yimsha from this point?
+
+>add [character:Conan]
+All the rest of the day, and all night.
+Do you want to go there? By Crom, it's no place for an ordinary human, from what the hill-people say.
+
+>add [character:Yasmina]
+Why do they not gather and destroy the devils that inhabit it?
+
+>add [character:Conan]
+Wipe out wizards with swords? Anyway, they never interfere with people, unless the people interfere with them. I never saw one of them, though I've talked with men who swore they had. They say they've glimpsed people from the tower among the crags at sunset or sunrise - tall, silent men in black robes.
+
+>add [character:Yasmina]
+Would you be afraid to attack them?
+
+>add [character:Conan]
+I? Why, if they imposed upon me, it would be my life or theirs. But I have nothing to do with them. I came to these mountains to raise a following of human beings, not to war with wizards.
+
+
+>id:2
+Empty
+
+>id:3
+Empty
+
+>id:4
+Empty

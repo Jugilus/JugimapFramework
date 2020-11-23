@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spriteSheetImage>
+    <subimage name="img6" x="0" y="0" width="937" height="938"/>
+    <subimage name="img5" x="937" y="0" width="379" height="151"/>
+    <subimage name="img1" x="937" y="151" width="177" height="112"/>
+    <subimage name="img2" x="937" y="263" width="177" height="112"/>
+    <subimage name="gird1" x="937" y="375" width="113" height="113"/>
+    <subimage name="img3" x="937" y="488" width="107" height="112"/>
+    <subimage name="img4" x="937" y="600" width="107" height="55"/>
+</spriteSheetImage>

@@ -1,5 +1,6 @@
 #include <algorithm>
-#include "sceneAGK.h"
+#include "jugimapAGK/jmAGK.h"
+#include "jugiApp/app.h"
 #include "template.h"
 
 
@@ -7,39 +8,51 @@
 void app::Begin(void)
 {
 
-    agk::SetWindowTitle("JugiMap Parallax Scrolling - AGK version");
+    std::string appName = jugiApp::jugimapAppName + " - AGK version";
+    agk::SetWindowTitle(appName.c_str());
     agk::SetVirtualResolution (1300, 800);
     agk::SetWindowAllowResize(0);
 
     agk::UseNewDefaultFonts(1);
     agk::SetPrintSize(20);
+    agk::CompleteRawJoystickDetection();
 
 
-    // Set required jugimap global paramaters and objects
+    // JUGIMAP CORE INITIALIZATION
     //---------------------------------------------------
-
+    jugimap::settings.SetEngine(jugimap::Engine::AGK);
     jugimap::settings.SetScreenSize(jugimap::Vec2i(agk::GetVirtualWidth(),agk::GetVirtualHeight()));
     jugimap::settings.SetZOrderStep(-10);                                       // Z-order step for setting z-order for layers.
+    jugimap::settings.SetMapZOrderStart(10000);                                 // 10000 is max value for AGK zOrder
+    jugimap::settings.SetMapZOrderStep(-1000);
     jugimap::objectFactory = new jugimap::ObjectFactoryAGK();                   // All jugimap map elements are created via 'objectFactory' object!
-    jugimap::sceneManager = new jugimap::SceneManager();
     jugimap::WorldMapCamera::allowRotation = false;                             // AGK 'view' transformation does not support rotation!
 
     // path prefixes
-    //jugimap::JugiMapBinaryLoader::pathPrefix = "";                            // No prefix needed.
-    //jugimap::GraphicFile::pathPrefix = "";                                    // No prefix needed.
-    //jugimap::Font::pathPrefix = "";                                           // No prefix needed.
+    // jugimap::JugiMapBinaryLoader::pathPrefix = "";                           // No prefix needed.
+    // jugimap::GraphicFile::pathPrefix = "";                                   // No prefix needed.
+    // jugimap::Font::pathPrefix = "";                                          // No prefix needed.
+    // jugimap::TextLibrary::pathPrefix = "";                                   // No prefix needed.
+
+    // path where text files are stored
+    jugimap::TextLibrary::path = "media/texts/";
 
     // Load shaders required for some jugimap sprite properties
-    jugimap::shaders::colorBlend_SimpleMultiply->Load("media/shaders_AGK/spriteColorOverlay_simpleMultiply.ps");
-    jugimap::shaders::colorBlend_Normal->Load("media/shaders_AGK/spriteColorOverlay_normal.ps");
-    jugimap::shaders::colorBlend_Multiply->Load("media/shaders_AGK/spriteColorOverlay_multiply.ps");
-    jugimap::shaders::colorBlend_LinearDodge->Load("media/shaders_AGK/spriteColorOverlay_linearDodge.ps");
-    jugimap::shaders::colorBlend_Color->Load("media/shaders_AGK/spriteColorOverlay_color.ps");
+    jugimap::shaders::LoadJugimapShaders();
 
-    //---------------------------------------------------
 
-    jugimap::Scene* scene = jugimap::sceneManager->AddScene(new ParallaxSceneAGK());
-    jugimap::sceneManager->SetCurrentScene(scene);
+    // Joystick connection
+    for(int i=0; i<jugimap::joysticks.size(); i++){
+        if(agk::GetRawJoystickExists(i+1)==1){
+            jugimap::joysticks[i]._SetConnected(true);
+            std::string name = agk::GetRawJoystickName(1);
+            jugimap::joysticks[i]._SetName(name);
+        }
+    }
+
+    //----
+    jugiApp::application = new jugiApp::DemoApp();
+    jugiApp::application->Init();
 
 }
 
@@ -54,14 +67,7 @@ int app::Loop (void)
         return 0;
     }
 
-
-    //--- Set mouse properties
-    mouse.SetScreenPosition(jugimap::Vec2f(agk::GetPointerX(), agk::GetPointerY()));
-    mouse.SetPressed(agk::GetPointerState());
-    mouse.SetHit(agk::GetPointerPressed());
-
-
-    jugimap::sceneManager->Update(agk::GetFrameTime()*1000);
+    jugiApp::application->Update(agk::GetFrameTime());
 
     //---
     agk::Sync();
@@ -72,7 +78,7 @@ int app::Loop (void)
 void app::End (void)
 {
 
-    jugimap::sceneManager->DeleteScenes();
+    delete jugiApp::application;
     jugimap::shaders::DeleteShaders();
     jugimap::DeleteGlobalObjects();
 

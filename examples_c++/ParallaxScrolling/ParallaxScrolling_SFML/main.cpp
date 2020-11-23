@@ -1,5 +1,6 @@
 #include <algorithm>
-#include "sceneSFML.h"
+#include "jugimapSFML/jmSFML.h"
+#include "jugiApp/app.h"
 
 
 
@@ -7,7 +8,7 @@
 int main()
 {
 
-    sf::RenderWindow window(sf::VideoMode(1300, 800), "JugiMap Parallax Scrolling - SFML version");
+    sf::RenderWindow window(sf::VideoMode(1300, 800), jugiApp::jugimapAppName + " - SFML version");
     window.setKeyRepeatEnabled(false);
     window.setVerticalSyncEnabled(true);
 
@@ -23,31 +24,30 @@ int main()
     text.setCharacterSize(14);
 
 
-    // Set required jugimap global paramaters and objects
+    // JUGIMAP CORE INITIALIZATION
     //---------------------------------------------------
+    jugimap::settings.SetEngine(jugimap::Engine::SFML);
     jugimap::settings.SetScreenSize(jugimap::Vec2i(window.getSize().x, window.getSize().y));
     jugimap::objectFactory = new jugimap::ObjectFactorySFML();            // all jugimap elements are created via 'objectFactory'
-    jugimap::sceneManager = new jugimap::SceneManager();
     jugimap::globSFML::CurrentWindow = &window;
     jugimap::globSFML::CurrentRenderTarget = &window;
 
     // path prefixes
-    //jugimap::JugiMapBinaryLoader::pathPrefix = "";        // No prefix needed.
-    //jugimap::GraphicFile::pathPrefix = "";                // No prefix needed.
-    //jugimap::Font::pathPrefix = "";                       // No prefix needed.
+    // jugimap::JugiMapBinaryLoader::pathPrefix = "";        // No prefix needed.
+    // jugimap::GraphicFile::pathPrefix = "";                // No prefix needed.
+    // jugimap::Font::pathPrefix = "";                       // No prefix needed.
+    // jugimap::TextBook::pathPrefix = "";                   // No prefix needed.
 
-    // Load shaders
-    jugimap::shaders::ColorOverlay_SimpleMultiply.Load("media/shaders_SFML/spriteColorOverlay_simpleMultiply.frag");
-    jugimap::shaders::ColorOverlay_Normal.Load("media/shaders_SFML/spriteColorOverlay_normal.frag");
-    jugimap::shaders::ColorOverlay_Multiply.Load("media/shaders_SFML/spriteColorOverlay_multiply.frag");
-    jugimap::shaders::ColorOverlay_LinearDodge.Load("media/shaders_SFML/spriteColorOverlay_linearDodge.frag");
-    jugimap::shaders::ColorOverlay_Color.Load("media/shaders_SFML/spriteColorOverlay_color.frag");
+    // path where text files are stored
+    jugimap::TextLibrary::path = "media/texts/";
+
+    // shaders
+    jugimap::shaders::LoadJugimapShaders();
+
 
     //---------------------------------------------------
-
-    // Create scene
-    jugimap::Scene* scene = jugimap::sceneManager->AddScene(new ParallaxSceneSFML());
-    jugimap::sceneManager->SetCurrentScene(scene);
+    jugiApp::application = new jugiApp::DemoApp();
+    jugiApp::application->Init();
 
 
     //--- timing variables
@@ -63,17 +63,16 @@ int main()
         while (window.pollEvent(event))
         {
             if(event.type == sf::Event::Closed){
+
+                jugimap::settings.SetAppTerminated(true);
+                delete  jugiApp::application;
+                jugimap::DeleteGlobalObjects();
+
                 window.close();
                 return 0;
 
-            }else if(event.type == sf::Event::MouseButtonPressed){
-                mouse.SetHit(true);
-
-            }else if(event.type == sf::Event::MouseButtonReleased){
-                mouse.SetHit(false);
-
-            }else if(event.type == sf::Event::MouseMoved){
-                mouse.SetScreenPosition(jugimap::Vec2f(event.mouseMove.x, event.mouseMove.y));
+            }else{
+                jugimap::ProcessEvents(event);
             }
         }
 
@@ -98,19 +97,18 @@ int main()
         double frameTimeMS = passedTimeMS - passedTimeMSPrevious;
         passedTimeMSPrevious = passedTimeMS;
 
-        // Use this function for updating logic with a variable time step which is the same as the frame time...
-        jugimap::sceneManager->Update(frameTimeMS);
+
+        jugiApp::application->Update(frameTimeMS/1000.0);
 
         // ... Or use this to update logic with a fixed time step.
-        //jugimap::settings.EnableLerpDrawing(true);                              // draw with interpolated values to reduce stutter when fixed rate logic is in place which is not in sync with frame rate
-        //jugimap::sceneManager->UpdateViaFixedTimeStep(1000.0/30);            // fixed time step of 1000.0/30 miliseconds
-
+        // jugimap::settings.EnableLerpDrawing(true);                           // draw with interpolated values to reduce stutter when fixed rate logic is in place which is not in sync with frame rate
+        // jugimap::sceneManager->UpdateViaFixedTimeStep(1000.0/30);            // fixed time step of 1000.0/30 miliseconds
 
 
         // DRAW
         //----------------------------------------------------------
         window.clear();
-        jugimap::sceneManager->Draw();
+        jugiApp::application->Draw();
 		window.display();
 
         jugimap::globSFML::countDrawnFrames++;
@@ -119,6 +117,9 @@ int main()
 
 	return 0;
 }
+
+
+
 
 
 
