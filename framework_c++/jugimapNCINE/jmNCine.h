@@ -48,6 +48,7 @@ public:
     int Pos() override {return ncIFile->tell();}
     void Seek(int _pos) override {ncIFile->seek(_pos, SEEK_SET);}
     int Size() override {return ncIFile->size();}
+    void Close() override {ncIFile->close();}
 
 
     unsigned char ReadByte()  override
