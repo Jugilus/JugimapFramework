@@ -31,8 +31,8 @@ void MyEventHandler::onPreInit(ncine::AppConfiguration &config)
 #elif defined(__EMSCRIPTEN__)
     config.dataPath() = "/";
 #else
-    #ifdef PACKAGE_DEFAULT_DATA_DIR
-    config.dataPath() = PACKAGE_DEFAULT_DATA_DIR;
+    #ifdef NCPROJECT_DEFAULT_DATA_DIR
+    config.dataPath() = NCPROJECT_DEFAULT_DATA_DIR;
     #else
     config.dataPath() = "data/";
     #endif

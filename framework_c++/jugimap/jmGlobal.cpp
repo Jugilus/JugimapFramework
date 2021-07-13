@@ -52,6 +52,7 @@ Vec2f GetRelativeHandleFromTextHandleVariant(TextHandleVariant _thv)
 
     switch (_thv)
     {
+    default:
     case TextHandleVariant::CENTER:
         return Vec2f(0.5f, 0.5f);
 
