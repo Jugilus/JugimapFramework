@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <ncine/Application.h>
 #include <ncine/IInputManager.h>
+#include <ncine/Viewport.h>
 //#include <jugimapNCINE/jmNCine.h>
 #include "jmNCine.h"
 
@@ -778,6 +779,12 @@ void MapNC::InitEngineObjects(MapType _mapType)
     mMapNCNode = new MapNCNode(this);     // First create node as it will be used during sprite initialization!
     Map::InitEngineObjects(_mapType);
 
+    ncine::Viewport &rootViewport = ncine::theApplication().rootViewport();
+    mViewport.setNextViewport(rootViewport.nextViewport());
+    rootViewport.setNextViewport(&mViewport);
+    mViewport.setCamera(&mCamera);
+    mViewport.setRootNode(mMapNCNode);
+
 }
 
 
@@ -787,9 +794,15 @@ void MapNC::UpdateEngineObjects()
 
     Map::UpdateEngineObjects();
 
-    mMapNCNode->setRotation(-GetCamera()->GetRotation());
-    mMapNCNode->setScale(GetCamera()->GetScale());
-    mMapNCNode->setPosition(GetCamera()->GetProjectedMapPosition().x, GetCamera()->GetProjectedMapPosition().y);
+    if (GetCamera()->GetChangeFlags() != Camera::Change::NONE ||
+        GetCamera()->GetKind() == Camera::Kind::SCREEN)
+    {
+        ncine::Camera::ViewValues viewValues = mCamera.viewValues();
+        viewValues.rotation = -GetCamera()->GetRotation();
+        viewValues.scale = GetCamera()->GetScale();
+        viewValues.position.set(GetCamera()->GetProjectedMapPosition().x, GetCamera()->GetProjectedMapPosition().y);
+        mCamera.setView(viewValues);
+    }
 
 }
 
@@ -822,11 +835,6 @@ EngineSceneNC::EngineSceneNC(Scene *_scene) : EngineScene(_scene)
 
 void EngineSceneNC::PostInit()
 {
-
-    for(Map* m : GetScene()->GetMaps()){
-        MapNC * ncMap = static_cast<MapNC*>(m);
-        ncNode->addChildNode(ncMap->GetMapNCNode());
-    }
 
 }
 

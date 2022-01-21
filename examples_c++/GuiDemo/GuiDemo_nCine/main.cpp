@@ -3,6 +3,7 @@
 #include <ncine/IFile.h>
 #include <ncine/FileSystem.h>
 #include <ncine/Keys.h>
+#include <ncine/Viewport.h>
 
 #include "jugiApp/app.h"
 
@@ -60,7 +61,7 @@ void MyEventHandler::onInit()
 
     ncine::theApplication().setAutoSuspension(true);
 
-     ncine::theApplication().gfxDevice().setClearColor (0.13333, 0.13333, 0.13333, 1.0);
+     ncine::theApplication().rootViewport().setClearColor (0.13333, 0.13333, 0.13333, 1.0);
 
     // JUGIMAP CORE INITIALIZATION
     //---------------------------------------------------
