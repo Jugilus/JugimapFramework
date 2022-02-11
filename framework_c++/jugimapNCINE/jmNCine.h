@@ -7,6 +7,8 @@
 #define JUGIMAP_NCINE_H
 
 #include <ncine/imgui.h>
+#include <ncine/Camera.h>
+#include <ncine/Viewport.h>
 #include <ncine/Texture.h>
 #include <ncine/Sprite.h>
 #include <ncine/DrawableNode.h>
@@ -319,6 +321,8 @@ public:
 
 private:
     MapNCNode * mMapNCNode = nullptr;                       // LINK
+    ncine::Viewport mViewport;
+    ncine::Camera mCamera;
 };
 
 
